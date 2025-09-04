@@ -80,7 +80,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         role: string
     ) => {
         await API.post("/auth/register/", { username, password, role });
-        navigate("/login", { replace: true });
+        navigate("/signin", { replace: true });
     };
 
     // ✅ logout
@@ -100,7 +100,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setAccess(null);
         setUser(null);
 
-        navigate("/login", { replace: true });
+        navigate("/signin", { replace: true });
     };
 
     return (
