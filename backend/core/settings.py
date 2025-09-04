@@ -34,7 +34,10 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",
     "rest_framework_simplejwt.token_blacklist",
     "corsheaders",
-    
+    "user_sessions",
+    "rest_framework_tracking",
+    "silk",
+
     # Local apps
     "accounts",
     "certificates",
@@ -58,6 +61,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "drf_api_logger.middleware.api_logger_middleware.APILoggerMiddleware",
+    "user_sessions.middleware.SessionMiddleware",
 ]
 
 # DRF API Logger settings
@@ -132,7 +136,6 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 PASSWORD_HASHERS = [
-    "django.contrib.auth.hashers.Argon2PasswordHasher",
     "django.contrib.auth.hashers.PBKDF2PasswordHasher",
     "django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher",
     "django.contrib.auth.hashers.BCryptSHA256PasswordHasher",
@@ -210,3 +213,5 @@ LOGGING = {
 # Default Primary Key
 # --------------------------------------------------------
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+SESSION_ENGINE = "user_sessions.backends.db"
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 7  # 7 days

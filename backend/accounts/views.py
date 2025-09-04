@@ -6,15 +6,15 @@ from rest_framework import generics
 from rest_framework.permissions import AllowAny,IsAuthenticated
 from .serializers import RegisterSerializer,CustomTokenObtainPairSerializer,LogoutSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_tracking.mixins import LoggingMixin
 
-
-class UserViewSet(viewsets.ModelViewSet):
+class UserViewSet(LoggingMixin, viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [IsAdminOrInstructor]  # Admin/Instructor only
 
 
-class StudentGroupViewSet(viewsets.ModelViewSet):
+class StudentGroupViewSet(LoggingMixin, viewsets.ModelViewSet):
     queryset = StudentGroup.objects.all()
     serializer_class = StudentGroupSerializer
     permission_classes = [IsAdminOrInstructor]  # Admin/Instructor only
@@ -23,18 +23,19 @@ class StudentGroupViewSet(viewsets.ModelViewSet):
         # Auto-assign instructor from request user if instructor
         serializer.save(instructor=self.request.user)
         
-class RegisterView(generics.CreateAPIView):
+class RegisterView(LoggingMixin, generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
     permission_classes = [AllowAny]
     
-class CustomTokenObtainPairView(TokenObtainPairView):
-    serializer_class = CustomTokenObtainPairSerializer
     
-class LogoutView(generics.GenericAPIView):
+class CustomTokenObtainPairView(LoggingMixin, TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer
+
+class LogoutView(LoggingMixin, generics.GenericAPIView):
     serializer_class = LogoutSerializer
     permission_classes = [IsAuthenticated]
-
+    
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)

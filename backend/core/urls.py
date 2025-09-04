@@ -6,8 +6,8 @@ from enrollments.views import EnrollmentViewSet, GroupEnrollmentViewSet
 from quizzes.views import QuizViewSet, QuestionViewSet, OptionViewSet, SubmissionViewSet
 from certificates.views import CertificateViewSet
 from django.contrib import admin
-router = DefaultRouter()
 
+router = DefaultRouter()
 # Accounts
 router.register(r'users', UserViewSet)
 router.register(r'groups', StudentGroupViewSet)
@@ -33,4 +33,5 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/", include(router.urls)),
     path("api/auth/", include("accounts.jwt_urls")),
+    path('silk/', include('silk.urls', namespace='silk'))
 ]
