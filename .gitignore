@@ -1,78 +1,57 @@
-# Python
+# --------------------
+# Django / Python
+# --------------------
 __pycache__/
 *.py[cod]
-*$py.class
-*.pyo
-*.pyd
-*.pdb
-*.egg
-*.egg-info/
-.eggs/
-*.manifest
-*.spec
-
-# Virtual environment
-venv/
-env/
-.venv/
-ENV/
-
-# Django
+*.sqlite3
+*.db
 *.log
 *.pot
 *.pyc
-db.sqlite3
-db.sqlite3-journal
-media/
-staticfiles/
-static/
-local_settings.py
-
-# Django migrations (optional, keep if you want history in git)
-*/migrations/__pycache__/
-*/migrations/*.pyc
-*/migrations/*.pyo
-*/migrations/*.pyd
-*/migrations/*.pdb
-# Uncomment below to ignore migration files completely
-# */migrations/
-
-# IDEs & editors
-.vscode/
-.idea/
-*.sublime-workspace
-*.sublime-project
-
-# OS-specific
-.DS_Store
-Thumbs.db
-
-# Env files
-.env
+*.pyo
+*.pyd
 *.env
+*.venv
+venv/
+env/
+ENV/
+*.egg-info/
+dist/
+build/
+staticfiles/
+media/
 
+# Django migrations (optional, if you want to track them remove this)
+*/migrations/__pycache__/
+*/migrations/*.py
+
+# --------------------
+# Node / React
+# --------------------
+node_modules/
+dist/
+build/
+.cache/
+.next/
+out/
 
 # Logs
-logs
-*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
 .DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+*.sublime-project
+*.sublime-workspace
+
+# --------------------
+# Tailwind
+# --------------------
+.pnp.*
+.pnp.js
+*.css.map

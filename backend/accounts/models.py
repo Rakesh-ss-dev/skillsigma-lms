@@ -1,18 +1,27 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-
+from django.core.validators import FileExtensionValidator
 class User(AbstractUser):
     ROLES = (
         ('admin', 'Admin'),
         ('instructor', 'Instructor'),
         ('student', 'Student'),
     )
-    role = models.CharField(max_length=20, choices=ROLES, default='student')
-    avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
-    bio = models.TextField(blank=True)
 
-    def __str__(self):
-        return f"{self.username} ({self.role})"
+    role = models.CharField(
+        max_length=20,
+        choices=ROLES,
+        default='student',
+        verbose_name="User Role"
+    )
+    avatar = models.ImageField(
+        upload_to='avatars/',
+        null=True,
+        blank=True,
+        validators=[FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png'])]
+    )
+    bio = models.TextField(blank=True)
+    phone = models.CharField(max_length=15, default='9999999999')
 
 class StudentGroup(models.Model):
     name = models.CharField(max_length=255)

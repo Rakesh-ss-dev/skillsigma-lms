@@ -7,11 +7,18 @@ import {
 } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../api/axios";
+import toast from "react-hot-toast";
 
 interface User {
     id: number;
     username: string;
+    email: string;
+    firstname?: string;
+    lastname?: string;
+    name: string;
     role: "admin" | "instructor" | "student";
+    avatar?: string;
+    phone?: string;
 }
 
 interface AuthContextType {
@@ -51,26 +58,36 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     // ✅ login
     const login = async (username: string, password: string) => {
-        const res = await API.post("/auth/login/", { username, password });
+        try {
+            const res = await API.post("/auth/login/", { username, password });
+            localStorage.setItem("access", res.data.access);
+            localStorage.setItem("refresh", res.data.refresh);
 
-        localStorage.setItem("access", res.data.access);
-        localStorage.setItem("refresh", res.data.refresh);
+            setAccess(res.data.access);
 
-        setAccess(res.data.access);
+            // decode JWT payload
+            const payload = JSON.parse(atob(res.data.access.split(".")[1]));
 
-        // decode JWT payload
-        const payload = JSON.parse(atob(res.data.access.split(".")[1]));
+            const newUser: User = {
+                id: payload.user_id,
+                username: payload.username,
+                role: payload.role,
+                email: payload.email,
+                name: payload.name,
+                firstname: payload.firstname,
+                lastname: payload.lastname,
+                avatar: payload.avatar,
+                phone: payload.phone
+            };
 
-        const newUser: User = {
-            id: payload.user_id,
-            username: payload.username,
-            role: payload.role,
-        };
-
-        setUser(newUser);
-        localStorage.setItem("user", JSON.stringify(newUser)); // ✅ persist user
-
-        navigate(`/${payload.role}-dashboard`);
+            setUser(newUser);
+            localStorage.setItem("user", JSON.stringify(newUser)); // ✅ persist user
+            toast.success('Logged in')
+            navigate(`/${payload.role}-dashboard`);
+        }
+        catch (err) {
+            toast.error("The credentails didn't match")
+        }
     };
 
     // ✅ register

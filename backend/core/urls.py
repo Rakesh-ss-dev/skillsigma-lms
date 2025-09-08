@@ -6,6 +6,8 @@ from enrollments.views import EnrollmentViewSet, GroupEnrollmentViewSet
 from quizzes.views import QuizViewSet, QuestionViewSet, OptionViewSet, SubmissionViewSet
 from certificates.views import CertificateViewSet
 from django.contrib import admin
+from django.conf import settings
+from django.conf.urls.static import static
 
 router = DefaultRouter()
 # Accounts
@@ -34,4 +36,4 @@ urlpatterns = [
     path("api/", include(router.urls)),
     path("api/auth/", include("accounts.jwt_urls")),
     path('silk/', include('silk.urls', namespace='silk'))
-]
+]+static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

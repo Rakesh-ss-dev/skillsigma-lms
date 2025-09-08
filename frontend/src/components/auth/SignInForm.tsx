@@ -19,6 +19,7 @@ export default function SignInForm() {
             <form onSubmit={async (e) => {
               e.preventDefault();
               await login(email, password);
+
             }}>
               <div className="space-y-6">
                 <div>

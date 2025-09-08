@@ -3,22 +3,48 @@ from .models import User, StudentGroup
 from django.contrib.auth.password_validation import validate_password
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
+
+
 class UserSerializer(serializers.ModelSerializer):
+    avatar = serializers.SerializerMethodField()
+
     class Meta:
         model = User
-        fields = ["id", "username", "email", "first_name", "last_name", "role", "avatar", "bio"]
+        fields = "__all__"
+
+    def get_avatar(self, obj):
+        request = self.context.get("request")
+        if obj.avatar and hasattr(obj.avatar, "url"):
+            return request.build_absolute_uri(obj.avatar.url)
+        return None
+
+    def get_full_name(self, obj):
+        if obj.first_name and obj.last_name:
+            return f"{obj.first_name.strip()} {obj.last_name.strip()}"
+        return None
 
 
 class StudentGroupSerializer(serializers.ModelSerializer):
     instructor = UserSerializer(read_only=True)
     students = UserSerializer(many=True, read_only=True)
     student_ids = serializers.PrimaryKeyRelatedField(
-        many=True, queryset=User.objects.filter(role="student"), write_only=True, source="students"
+        many=True,
+        queryset=User.objects.filter(role="student"),
+        write_only=True,
+        source="students",
     )
 
     class Meta:
         model = StudentGroup
-        fields = ["id", "name", "description", "instructor", "students", "student_ids", "created_at"]
+        fields = [
+            "id",
+            "name",
+            "description",
+            "instructor",
+            "students",
+            "student_ids",
+            "created_at",
+        ]
 
     def create(self, validated_data):
         students = validated_data.pop("students", [])
@@ -33,12 +59,13 @@ class StudentGroupSerializer(serializers.ModelSerializer):
             instance.students.set(students)
         return instance
 
+
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, validators=[validate_password])
 
     class Meta:
         model = User
-        fields = ("id", "username", "email", "password", "role")
+        fields = ("id", "username", "email", "password", "role", "name", "email")
 
     def create(self, validated_data):
         user = User.objects.create_user(
@@ -48,27 +75,50 @@ class RegisterSerializer(serializers.ModelSerializer):
             role=validated_data.get("role", "student"),
         )
         return user
-    
-    
+
+
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
+
         # Add custom claims
         token["role"] = user.role
         token["username"] = user.username
+        token["email"] = user.email
+        token["id"] = user.id
+        token["firstname"] = user.first_name if user.first_name else None
+        token["lastname"] = user.last_name if user.last_name else None
+        token['phone']=user.phone if user.phone else None
+        token["fullname"] = (
+            f"{user.first_name.strip()} {user.last_name.strip()}"
+            if user.first_name and user.last_name else None
+        )
+        if user.avatar and hasattr(user.avatar, "url"):
+            token["avatar"] = user.avatar.url
+        else:
+            token["avatar"] = None
+
         return token
 
     def validate(self, attrs):
         data = super().validate(attrs)
-        data.update({
-            "id": self.user.id,
-            "username": self.user.username,
-            "email": self.user.email,
-            "role": self.user.role,
-        })
+
+        data.update(
+            {
+                "id": self.user.id,
+                "username": self.user.username,
+                "email": self.user.email,
+                "role": self.user.role,
+                "name": f"{self.user.first_name.strip()} {self.user.last_name.strip()}".strip(),
+                "avatar": self.user.avatar.url if self.user.avatar else None,
+                'phone':self.user.phone
+            }
+        )
+
         return data
-    
+
+
 class LogoutSerializer(serializers.Serializer):
     refresh = serializers.CharField()
 
