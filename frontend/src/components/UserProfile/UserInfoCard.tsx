@@ -5,23 +5,37 @@ import Input from "../form/input/InputField";
 import Label from "../form/Label";
 import { useAuth } from "../../context/AuthContext";
 import { useState } from "react";
+import toast from "react-hot-toast";
 
 export default function UserInfoCard() {
   const { isOpen, openModal, closeModal } = useModal();
-  const { user } = useAuth();
-  const [firstName, setFirstName] = useState<string>(user?.firstname ?? "");
-  const [lastName, setLastName] = useState<string>(user?.lastname ?? "");
+  const { user, updateUserProfile } = useAuth();
+  const [firstName, setFirstName] = useState<string>(user?.first_name ?? "");
+  const [lastName, setLastName] = useState<string>(user?.last_name ?? "");
   const [email, setEmail] = useState<string>(user?.email ?? '');
   const [phone, setPhone] = useState<string>(user?.phone ?? '');
-  const handleSave = () => {
-
-    console.log("Saving changes...");
-
-    closeModal();
+  const handleSave = async (e: any) => {
+    e.preventDefault();
+    try {
+      await updateUserProfile({
+        first_name: firstName,
+        last_name: lastName,
+        email,
+        phone,
+      });
+      toast.success("Profile updated");
+      setFirstName(user?.first_name ?? "");
+      setLastName(user?.last_name ?? "");
+      setEmail(user?.email ?? '');
+      setPhone(user?.phone ?? '');
+      closeModal();
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || "Update failed");
+    }
   };
   const closebtnClick = () => {
-    setFirstName(user?.firstname ?? "");
-    setLastName(user?.lastname ?? "");
+    setFirstName(user?.first_name ?? "");
+    setLastName(user?.last_name ?? "");
     setEmail(user?.email ?? '');
     setPhone(user?.phone ?? '');
     closeModal();
@@ -40,7 +54,7 @@ export default function UserInfoCard() {
                 First Name
               </p>
               <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-                {user?.firstname === null ? "FirstName" : user?.firstname}
+                {user?.first_name === null ? "FirstName" : user?.first_name}
               </p>
             </div>
 
@@ -49,7 +63,7 @@ export default function UserInfoCard() {
                 Last Name
               </p>
               <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-                {user?.lastname === null ? "LastName" : user?.lastname}
+                {user?.last_name === null ? "LastName" : user?.last_name}
               </p>
             </div>
 
@@ -115,7 +129,7 @@ export default function UserInfoCard() {
               Update your details to keep your profile up-to-date.
             </p>
           </div>
-          <form className="flex flex-col">
+          <form onSubmit={handleSave} className="flex flex-col">
             <div className="custom-scrollbar max-h-[450px] overflow-y-auto px-2 pb-3">
               <div className="mt-7">
                 <h5 className="mb-5 text-lg font-medium text-gray-800 dark:text-white/90 lg:mb-6">
@@ -148,7 +162,7 @@ export default function UserInfoCard() {
               <Button size="sm" variant="outline" onClick={closebtnClick}>
                 Close
               </Button>
-              <Button size="sm" onClick={handleSave}>
+              <Button size="sm" type="submit">
                 Save Changes
               </Button>
             </div>

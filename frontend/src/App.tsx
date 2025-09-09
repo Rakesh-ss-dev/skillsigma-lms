@@ -24,14 +24,12 @@ export default function App() {
   return (
     <>
       <ScrollToTop />
-      <Toaster />
       <Routes>
         {/* Dashboard Layout */}
         <Route element={<AppLayout />}>
 
           <Route element={<ProtectedRoute allowedRoles={["admin", "instructor"]} />}>
-            <Route index path="/admin-dashboard" element={<Home />} />
-            <Route index path="/instructor-dashboard" element={<Home />} />
+            <Route index path="/" element={<Home />} />
             {/* Others Page */}
             <Route path="/profile" element={<UserProfiles />} />
             <Route path="/calendar" element={<Calendar />} />
@@ -64,6 +62,9 @@ export default function App() {
         {/* Fallback Route */}
         <Route path="*" element={<NotFound />} />
       </Routes>
+      <Toaster position="bottom-right" containerStyle={{
+        zIndex: 99999,
+      }} reverseOrder={false} />
     </>
   );
 }

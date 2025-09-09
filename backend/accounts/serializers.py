@@ -6,21 +6,17 @@ from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 
 
 class UserSerializer(serializers.ModelSerializer):
-    avatar = serializers.SerializerMethodField()
+    avatar = serializers.ImageField(required=False, allow_null=True)  # writable
+    avatar_url = serializers.SerializerMethodField()  # read-only
 
     class Meta:
         model = User
         fields = "__all__"
 
-    def get_avatar(self, obj):
+    def get_avatar_url(self, obj):
         request = self.context.get("request")
         if obj.avatar and hasattr(obj.avatar, "url"):
             return request.build_absolute_uri(obj.avatar.url)
-        return None
-
-    def get_full_name(self, obj):
-        if obj.first_name and obj.last_name:
-            return f"{obj.first_name.strip()} {obj.last_name.strip()}"
         return None
 
 
@@ -87,8 +83,8 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         token["username"] = user.username
         token["email"] = user.email
         token["id"] = user.id
-        token["firstname"] = user.first_name if user.first_name else None
-        token["lastname"] = user.last_name if user.last_name else None
+        token["first_name"] = user.first_name if user.first_name else None
+        token["last_name"] = user.last_name if user.last_name else None
         token['phone']=user.phone if user.phone else None
         token["fullname"] = (
             f"{user.first_name.strip()} {user.last_name.strip()}"
@@ -96,28 +92,46 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         )
         if user.avatar and hasattr(user.avatar, "url"):
             token["avatar"] = user.avatar.url
+            token['avatar_url']=user.avatar_url
         else:
             token["avatar"] = None
+            token['avatar_url']=None
 
         return token
 
     def validate(self, attrs):
         data = super().validate(attrs)
-
+        request = self.context.get("request")
         data.update(
             {
                 "id": self.user.id,
                 "username": self.user.username,
                 "email": self.user.email,
                 "role": self.user.role,
-                "name": f"{self.user.first_name.strip()} {self.user.last_name.strip()}".strip(),
+                'first_name':self.user.first_name,
+                "last_name":self.user.last_name,
                 "avatar": self.user.avatar.url if self.user.avatar else None,
+                'avatar_url':request.build_absolute_uri(self.avatar.url),
                 'phone':self.user.phone
             }
         )
 
         return data
 
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(
+        required=True,
+        validators=[validate_password],
+    )
+    confirm_password = serializers.CharField(required=True)
+
+    def validate(self, data):
+        if data["new_password"] != data["confirm_password"]:
+            raise serializers.ValidationError(
+                {"error": "New passwords do not match"}
+            )
+        return data
 
 class LogoutSerializer(serializers.Serializer):
     refresh = serializers.CharField()

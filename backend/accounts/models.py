@@ -22,6 +22,7 @@ class User(AbstractUser):
     )
     bio = models.TextField(blank=True)
     phone = models.CharField(max_length=15, default='9999999999')
+    avatar_url = models.TextField(blank=True,default='')
 
 class StudentGroup(models.Model):
     name = models.CharField(max_length=255)

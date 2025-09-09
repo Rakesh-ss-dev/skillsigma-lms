@@ -22,8 +22,8 @@ staticfiles/
 media/
 
 # Django migrations (optional, if you want to track them remove this)
-*/migrations/__pycache__/
-*/migrations/*.py
+*backend/*/migrations/__pycache__/
+*backend/*/migrations/*.py
 
 # --------------------
 # Node / React

@@ -13,11 +13,12 @@ interface User {
     id: number;
     username: string;
     email: string;
-    firstname?: string;
-    lastname?: string;
+    first_name?: string;
+    last_name?: string;
     name: string;
     role: "admin" | "instructor" | "student";
-    avatar?: string;
+    avatar?: File;
+    avatar_url?: string;
     phone?: string;
 }
 
@@ -27,6 +28,7 @@ interface AuthContextType {
     login: (username: string, password: string) => Promise<void>;
     register: (username: string, password: string, role: string) => Promise<void>;
     logout: () => void;
+    updateUserProfile: (data: Partial<User>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -74,8 +76,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 role: payload.role,
                 email: payload.email,
                 name: payload.name,
-                firstname: payload.firstname,
-                lastname: payload.lastname,
+                first_name: payload.first_name,
+                last_name: payload.last_name,
                 avatar: payload.avatar,
                 phone: payload.phone
             };
@@ -83,7 +85,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setUser(newUser);
             localStorage.setItem("user", JSON.stringify(newUser)); // ✅ persist user
             toast.success('Logged in')
-            navigate(`/${payload.role}-dashboard`);
+            navigate(`/`);
         }
         catch (err) {
             toast.error("The credentails didn't match")
@@ -106,8 +108,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             await API.post("/auth/logout/", {
                 refresh: localStorage.getItem("refresh"),
             });
+            toast.success('Logged Out Successfully')
         } catch (err) {
-            console.error("Logout error:", err);
+            toast.error("Logout error:" + err);
         }
 
         localStorage.removeItem("access");
@@ -120,8 +123,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         navigate("/signin", { replace: true });
     };
 
+    const updateUserProfile = async (data: Partial<User>) => {
+        if (!user) throw new Error("No user logged in");
+
+        const res = await API.patch(`/users/${user.id}/`, data, {
+            headers: {
+                "Content-Type": "multipart/form-data",
+            },
+        });
+
+        const updatedUser: User = { ...user, ...data };
+        setUser(updatedUser);
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+
+        return res.data;
+    };
+
+
     return (
-        <AuthContext.Provider value={{ user, access, login, register, logout }}>
+        <AuthContext.Provider value={{ user, access, login, register, logout, updateUserProfile }}>
             {children}
         </AuthContext.Provider>
     );
