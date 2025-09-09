@@ -1,7 +1,7 @@
 # --------------------
 # Django / Python
 # --------------------
-__pycache__/
+**/__pycache__/
 *.py[cod]
 *.sqlite3
 *.db
@@ -22,9 +22,19 @@ staticfiles/
 media/
 
 # Django migrations (optional, if you want to track them remove this)
-*backend/*/migrations/__pycache__/
-*backend/*/migrations/*.py
+# Ignore Django migration files
+backend/*/migrations/*.py
+!backend/*/migrations/__init__.py
 
+# Ignore migration cache
+# Ignore Python cache
+__pycache__/
+*.pyc
+
+# Ignore Django migrations (but keep __init__.py)
+*/migrations/*.py
+!*/migrations/__init__.py
+*/migrations/__pycache__/
 # --------------------
 # Node / React
 # --------------------
