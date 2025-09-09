@@ -24,8 +24,8 @@ media/
 # Django migrations (optional, if you want to track them remove this)
 # Ignore Django migration files
 backend/*/migrations/*.py
-backend/*/migrations/__init__.py
-
+!backend/*/migrations/__init__.py
+backend/*/migrations/__pycache__/
 # Ignore migration cache
 # Ignore Python cache
 __pycache__/
