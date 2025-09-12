@@ -1,12 +1,18 @@
 from django.db import models
 from accounts.models import User
 
+class Category(models.Model):
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.name
+    
 class Course(models.Model):
     instructor = models.ForeignKey(User, on_delete=models.CASCADE, related_name="courses")
     title = models.CharField(max_length=255)
     description = models.TextField()
-    category = models.CharField(max_length=100, blank=True)
-    thumbnail = models.ImageField(upload_to='courses/', null=True, blank=True)
+    categories = models.ManyToManyField("Category", related_name="courses")  # changed here
+    thumbnail = models.ImageField(upload_to="courses/", null=True, blank=True)
     is_paid = models.BooleanField(default=False)
     price = models.DecimalField(max_digits=8, decimal_places=2, default=0.00)
     created_at = models.DateTimeField(auto_now_add=True)

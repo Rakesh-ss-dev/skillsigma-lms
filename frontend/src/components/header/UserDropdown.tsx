@@ -5,11 +5,17 @@ import { useAuth } from "../../context/AuthContext";
 
 export default function UserDropdown() {
   const [isOpen, setIsOpen] = useState(false);
+  const MEDIA_URL = import.meta.env.VITE_MEDIA_URL
   const { user, logout } = useAuth();
   const name =
     user?.first_name || user?.last_name
       ? `${user?.first_name ?? ""} ${user?.last_name ?? ""}`.trim()
       : user?.username ?? "Guest";
+  const imageUrl = !user?.avatar
+    ? "/images/user/user-icon.png"
+    : user.avatar.includes("http")
+      ? user.avatar
+      : `${MEDIA_URL}${user.avatar}`;
   function toggleDropdown() {
     setIsOpen(!isOpen);
   }
@@ -24,7 +30,7 @@ export default function UserDropdown() {
         className="flex items-center text-gray-700 dropdown-toggle dark:text-gray-400"
       >
         <span className="mr-3 overflow-hidden rounded-full h-11 w-11">
-          <img src="/images/user/user-icon.png" alt="User" />
+          <img className="w-full h-full object-cover" src={imageUrl} alt="User" />
         </span>
 
         <span className="block mr-1 font-medium text-theme-sm">{name}</span>

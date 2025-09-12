@@ -8,6 +8,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import API from "../api/axios";
 import toast from "react-hot-toast";
+import { jwtDecode } from "jwt-decode";
 
 interface User {
     id: number;
@@ -17,9 +18,22 @@ interface User {
     last_name?: string;
     name: string;
     role: "admin" | "instructor" | "student";
-    avatar?: File;
+    avatar?: any;
     avatar_url?: string;
     phone?: string;
+}
+
+interface JWTPayload {
+    user_id: number;
+    username: string;
+    role: "admin" | "instructor" | "student";
+    email: string;
+    first_name?: string;
+    last_name?: string;
+    name: string;
+    avatar?: string;
+    phone?: string;
+    exp: number;
 }
 
 interface AuthContextType {
@@ -28,7 +42,7 @@ interface AuthContextType {
     login: (username: string, password: string) => Promise<void>;
     register: (username: string, password: string, role: string) => Promise<void>;
     logout: () => void;
-    updateUserProfile: (data: Partial<User>) => Promise<void>;
+    updateUserProfile: (data: Partial<User>) => Promise<User>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -38,25 +52,84 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [user, setUser] = useState<User | null>(() => {
         try {
             const stored = localStorage.getItem("user");
-            if (!stored || stored === "undefined") return null; // safeguard
+            if (!stored || stored === "undefined") return null;
             return JSON.parse(stored) as User;
         } catch {
-            return null; // fallback if JSON is corrupted
+            return null;
         }
     });
     const [access, setAccess] = useState<string | null>(
         localStorage.getItem("access")
     );
 
-    // ✅ verify token on load
+    // 🔄 refresh token logic
+    const refreshAccessToken = async (): Promise<string | null> => {
+        try {
+            const res = await API.post("/auth/token/refresh/", {
+                refresh: localStorage.getItem("refresh"),
+            });
+
+            localStorage.setItem("access", res.data.access);
+            setAccess(res.data.access);
+            localStorage.setItem('refresh', res.data.refresh);
+
+            // decode payload & update user if needed
+            const payload: JWTPayload = jwtDecode(res.data.access);
+            const refreshedUser: User = {
+                id: payload.user_id,
+                username: payload.username,
+                role: payload.role,
+                email: payload.email,
+                name: payload.name,
+                first_name: payload.first_name,
+                last_name: payload.last_name,
+                avatar: payload.avatar,
+                phone: payload.phone,
+            };
+            setUser(refreshedUser);
+            localStorage.setItem("user", JSON.stringify(refreshedUser));
+
+            return res.data.access;
+        } catch (err) {
+            console.warn("Refresh token failed:", err);
+            logout();
+            return null;
+        }
+    };
+
+    // 🔒 verify token on load
     useEffect(() => {
         if (access) {
-            API.post("/auth/token/verify/", { token: access }).catch(() => {
-                console.warn("Access token expired or invalid, logging out");
-                logout();
+            API.post("/auth/token/verify/", { token: access }).catch(async () => {
+                console.warn("Access expired, trying refresh...");
+                await refreshAccessToken();
             });
         }
     }, [access]);
+
+    // 🔄 Axios interceptor for auto-refresh on 401
+    useEffect(() => {
+        const interceptor = API.interceptors.response.use(
+            (response) => response,
+            async (error) => {
+                const originalRequest = error.config;
+
+                if (error.response?.status === 401 && !originalRequest._retry) {
+                    originalRequest._retry = true;
+                    const newAccess = await refreshAccessToken();
+                    if (newAccess) {
+                        originalRequest.headers["Authorization"] = `Bearer ${newAccess}`;
+                        return API(originalRequest); // retry failed request
+                    }
+                }
+                return Promise.reject(error);
+            }
+        );
+
+        return () => {
+            API.interceptors.response.eject(interceptor);
+        };
+    }, []);
 
     // ✅ login
     const login = async (username: string, password: string) => {
@@ -64,12 +137,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             const res = await API.post("/auth/login/", { username, password });
             localStorage.setItem("access", res.data.access);
             localStorage.setItem("refresh", res.data.refresh);
-
             setAccess(res.data.access);
 
-            // decode JWT payload
-            const payload = JSON.parse(atob(res.data.access.split(".")[1]));
-
+            const payload: JWTPayload = jwtDecode(res.data.access);
             const newUser: User = {
                 id: payload.user_id,
                 username: payload.username,
@@ -79,16 +149,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 first_name: payload.first_name,
                 last_name: payload.last_name,
                 avatar: payload.avatar,
-                phone: payload.phone
+                phone: payload.phone,
             };
 
             setUser(newUser);
-            localStorage.setItem("user", JSON.stringify(newUser)); // ✅ persist user
-            toast.success('Logged in')
+            localStorage.setItem("user", JSON.stringify(newUser));
+
+            toast.success("Logged in");
             navigate(`/`);
-        }
-        catch (err) {
-            toast.error("The credentails didn't match")
+        } catch (err) {
+            toast.error("The credentials didn't match");
         }
     };
 
@@ -108,9 +178,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             await API.post("/auth/logout/", {
                 refresh: localStorage.getItem("refresh"),
             });
-            toast.success('Logged Out Successfully')
+            toast.success("Logged Out Successfully");
         } catch (err) {
-            toast.error("Logout error:" + err);
+            console.error("Logout error:", err);
+            toast.error("Logout failed. Please try again.");
         }
 
         localStorage.removeItem("access");
@@ -123,25 +194,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         navigate("/signin", { replace: true });
     };
 
-    const updateUserProfile = async (data: Partial<User>) => {
+    // ✅ update profile
+    const updateUserProfile = async (data: Partial<User>): Promise<User> => {
         if (!user) throw new Error("No user logged in");
 
-        const res = await API.patch(`/users/${user.id}/`, data, {
-            headers: {
-                "Content-Type": "multipart/form-data",
-            },
-        });
+        let payload: any = data;
+        let headers = {};
 
-        const updatedUser: User = { ...user, ...data };
+        if (data.avatar instanceof File) {
+            const formData = new FormData();
+            Object.entries(data).forEach(([key, value]) => {
+                if (value !== undefined) formData.append(key, value as any);
+            });
+            payload = formData;
+            headers = { "Content-Type": "multipart/form-data" };
+        }
+
+        const res = await API.patch(`/users/${user.id}/`, payload, { headers });
+        const updatedUser: User = res.data;
         setUser(updatedUser);
         localStorage.setItem("user", JSON.stringify(updatedUser));
-
-        return res.data;
+        return updatedUser;
     };
 
-
     return (
-        <AuthContext.Provider value={{ user, access, login, register, logout, updateUserProfile }}>
+        <AuthContext.Provider
+            value={{ user, access, login, register, logout, updateUserProfile }}
+        >
             {children}
         </AuthContext.Provider>
     );

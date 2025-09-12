@@ -1,54 +1,82 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, generics, status
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_tracking.mixins import LoggingMixin
+
 from .models import User, StudentGroup
 from .serializers import (
     UserSerializer,
+    InstructorSerializer,
     StudentGroupSerializer,
-    ChangePasswordSerializer,
-)
-from .permissions import IsAdminOrInstructor
-from rest_framework import generics
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from .serializers import (
     RegisterSerializer,
     CustomTokenObtainPairSerializer,
+    ChangePasswordSerializer,
     LogoutSerializer,
 )
-from django.contrib.auth.hashers import check_password
-from rest_framework_simplejwt.views import TokenObtainPairView
-from rest_framework_tracking.mixins import LoggingMixin
-from rest_framework import generics, status
-from rest_framework.response import Response
+from .permissions import IsAdminOrInstructor
 
+
+# -------------------------------
+# Student User ViewSet
+# -------------------------------
 class UserViewSet(LoggingMixin, viewsets.ModelViewSet):
-    queryset = User.objects.all()
+    queryset = User.objects.none()  # placeholder for DRF
     serializer_class = UserSerializer
-    permission_classes = [IsAdminOrInstructor]  # Admin/Instructor only
+    permission_classes = [IsAdminOrInstructor]
+
+    def get_queryset(self):
+        return User.objects.filter(role="student")
 
 
+class InstructorViewSet(LoggingMixin, viewsets.ModelViewSet):
+    queryset = User.objects.none()  # placeholder for DRF
+    serializer_class = InstructorSerializer
+    permission_classes = [IsAdminOrInstructor]
+
+    def get_queryset(self):
+        return User.objects.filter(role="instructor")
+
+
+# -------------------------------
+# Student Group ViewSet
+# -------------------------------
 class StudentGroupViewSet(LoggingMixin, viewsets.ModelViewSet):
     queryset = StudentGroup.objects.all()
     serializer_class = StudentGroupSerializer
-    permission_classes = [IsAdminOrInstructor]  # Admin/Instructor only
+    permission_classes = [IsAdminOrInstructor]
 
     def perform_create(self, serializer):
-        # Auto-assign instructor from request user if instructor
-        serializer.save(instructor=self.request.user)
+        # Auto-assign instructor if request user is instructor
+        if self.request.user.role == "instructor":
+            serializer.save(instructor=self.request.user)
+        else:
+            serializer.save()
 
 
+# -------------------------------
+# User Registration View
+# -------------------------------
 class RegisterView(LoggingMixin, generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
     permission_classes = [AllowAny]
 
 
+# -------------------------------
+# Custom JWT Token View
+# -------------------------------
 class CustomTokenObtainPairView(LoggingMixin, TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
 
 
+# -------------------------------
+# Change Password View
+# -------------------------------
 class ChangePassword(LoggingMixin, generics.UpdateAPIView):
     serializer_class = ChangePasswordSerializer
     model = User
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get_object(self, queryset=None):
         return self.request.user
@@ -59,7 +87,7 @@ class ChangePassword(LoggingMixin, generics.UpdateAPIView):
         serializer.is_valid(raise_exception=True)
 
         # Check old password
-        if not check_password(serializer.validated_data["old_password"], user.password):
+        if not user.check_password(serializer.validated_data["old_password"]):
             return Response(
                 {"error": "Wrong password."},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -73,6 +101,11 @@ class ChangePassword(LoggingMixin, generics.UpdateAPIView):
             {"detail": "Password updated successfully"},
             status=status.HTTP_200_OK,
         )
+
+
+# -------------------------------
+# Logout View
+# -------------------------------
 class LogoutView(LoggingMixin, generics.GenericAPIView):
     serializer_class = LogoutSerializer
     permission_classes = [IsAuthenticated]
@@ -82,5 +115,6 @@ class LogoutView(LoggingMixin, generics.GenericAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(
-            {"detail": "Successfully logged out."}, status=status.HTTP_205_RESET_CONTENT
+            {"detail": "Successfully logged out."},
+            status=status.HTTP_205_RESET_CONTENT,
         )

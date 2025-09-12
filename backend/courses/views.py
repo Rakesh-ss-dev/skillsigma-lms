@@ -1,8 +1,15 @@
 from rest_framework import viewsets, permissions
-from .models import Course, Lesson
-from .serializers import CourseSerializer, LessonSerializer
+from .models import Course, Lesson, Category
+from .serializers import CourseSerializer, LessonSerializer, CategorySerializer
 from accounts.permissions import IsAdminOrInstructor
 from rest_framework_tracking.mixins import LoggingMixin
+
+
+class CategoryViewSet(LoggingMixin, viewsets.ModelViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    permission_classes = [IsAdminOrInstructor]
+
 
 class CourseViewSet(LoggingMixin, viewsets.ModelViewSet):
     queryset = Course.objects.all()

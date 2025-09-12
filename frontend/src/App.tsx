@@ -11,15 +11,19 @@ import Avatars from "./pages/UiElements/Avatars";
 import Buttons from "./pages/UiElements/Buttons";
 import LineChart from "./pages/Charts/LineChart";
 import BarChart from "./pages/Charts/BarChart";
-import Calendar from "./pages/Calendar";
 import BasicTables from "./pages/Tables/BasicTables";
 import FormElements from "./pages/Forms/FormElements";
-import Blank from "./pages/Blank";
 import AppLayout from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 import Home from "./pages/Dashboard/Home";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { Toaster } from 'react-hot-toast';
+import Users from "./pages/Users/Users"
+import Courses from "./pages/Courses/Courses";
+import Enrollments from "./pages/Enrollments/Enrollments";
+import Quiz from "./pages/Quiz/Quiz";
+import InstructorProfiles from "./pages/Users/Instructors";
+import CourseForm from "./components/Forms/CourseForm";
 export default function App() {
   return (
     <>
@@ -32,9 +36,15 @@ export default function App() {
             <Route index path="/" element={<Home />} />
             {/* Others Page */}
             <Route path="/profile" element={<UserProfiles />} />
-            <Route path="/calendar" element={<Calendar />} />
-            <Route path="/blank" element={<Blank />} />
+            <Route path="/learners" element={<Users />} />
+            <Route path="/instructors" element={<InstructorProfiles />} />
 
+
+            <Route path="/courses" element={<Courses />} />
+            <Route path='/add-course' element={<CourseForm />} />
+            <Route path='/edit-course/<id>' element={<CourseForm />} />
+            <Route path="/enrollments" element={<Enrollments />} />
+            <Route path='/quizes' element={<Quiz />} />
             {/* Forms */}
             <Route path="/form-elements" element={<FormElements />} />
 

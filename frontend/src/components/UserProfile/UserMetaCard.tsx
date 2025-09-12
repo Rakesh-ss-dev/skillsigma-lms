@@ -27,7 +27,11 @@ export default function UserMetaCard() {
     user?.first_name || user?.last_name
       ? `${user?.first_name ?? ""} ${user?.last_name ?? ""}`.trim()
       : user?.username ?? "Guest";
-  const imageUrl = user?.avatar === null ? '/images/user/user-icon.png' : `${MEDIA_URL}${user?.avatar_url}`;
+  const imageUrl = !user?.avatar
+    ? "/images/user/user-icon.png"
+    : user.avatar.includes("http")
+      ? user.avatar
+      : `${MEDIA_URL}${user.avatar}`;
   const [password, setPassword] = useState<string>()
   const [newPassword, setNewPassword] = useState<string>();
   const [confirmPassword, setConfirmPassword] = useState<string>();
@@ -130,7 +134,7 @@ export default function UserMetaCard() {
         <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
           <div className="flex flex-col items-center w-full gap-6 xl:flex-row">
             <div className="w-20 h-20 overflow-hidden border border-gray-200 rounded-full dark:border-gray-800">
-              <img src={imageUrl} alt="user" />
+              <img className="w-full h-full object-cover" src={imageUrl} alt="user" />
             </div>
             <div className="order-3 xl:order-2">
               <h4 className="mb-2 text-lg font-semibold text-center text-gray-800 dark:text-white/90 xl:text-left">
