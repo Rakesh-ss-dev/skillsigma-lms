@@ -13,7 +13,7 @@ export default function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
     }
 
     if (allowedRoles && !allowedRoles.includes(user.role)) {
-        return <Navigate to={`/${user.role}-dashboard`} replace />;
+        return <Navigate to={`/`} replace />;
     }
 
     return <Outlet />; // renders nested routes

@@ -11,6 +11,7 @@ import toast from "react-hot-toast";
 import { MdOutlinePassword } from "react-icons/md";
 import { SlPicture } from "react-icons/sl";
 import FileInput from "../form/input/FileInput";
+import isImageOrSvg from "../util/isImageorSvg";
 interface ModalFormState {
   type: "password" | "picture";
 }
@@ -39,14 +40,6 @@ export default function UserMetaCard() {
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-
-  const isImageOrSvg = (f: File) => {
-    // Most browsers set "image/*" types; some edge cases leave SVG type empty.
-    const isImageMime = f.type.startsWith("image/");
-    const isSvgMime = f.type === "image/svg+xml";
-    const isSvgExt = /\.svg$/i.test(f.name);
-    return isImageMime || isSvgMime || isSvgExt;
-  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];

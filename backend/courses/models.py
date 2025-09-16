@@ -25,9 +25,11 @@ class Lesson(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="lessons")
     title = models.CharField(max_length=255)
     content = models.TextField()
+    content_file = models.FileField(upload_to="lessons/content_files/", null=True, blank=True)
     video_url = models.URLField(blank=True, null=True)
     order = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
+    resources = models.FileField(upload_to="lessons/resources/", null=True, blank=True)
 
     class Meta:
         ordering = ['order']

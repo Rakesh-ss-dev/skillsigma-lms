@@ -1,160 +1,125 @@
-import { useState } from "react";
 import {
     ColumnDef,
     flexRender,
     getCoreRowModel,
-    getFilteredRowModel,
     getPaginationRowModel,
     getSortedRowModel,
-    SortingState,
     useReactTable,
+    SortingState,
 } from "@tanstack/react-table";
-
-import {
-    ChevronLeft,
-    ChevronRight,
-    ChevronsLeft,
-    ChevronsRight,
-    ArrowUpDown,
-    Plus,
-} from "lucide-react";
-import { Table, TableBody, TableCell, TableHeader, TableRow } from "../../ui/table";
-import Button from "../../ui/button/Button";
-import Input from "../../form/input/InputField";
-import { Link } from "react-router";
+import { useState } from "react";
 
 interface DataTableProps<T extends object> {
     columns: ColumnDef<T, any>[];
     data: T[];
     createLink?: string;
     createTitle?: string;
+    defaultSort?: { id: string; desc?: boolean }; // 👈 extra prop for default sorting
 }
 
-export function DataTable<T extends object>({ columns, data, createLink, createTitle = "Add" }: DataTableProps<T>) {
-    const [sorting, setSorting] = useState<SortingState>([]);
-    const [globalFilter, setGlobalFilter] = useState("");
+export function DataTable<T extends object>({
+    columns,
+    data,
+    createLink,
+    createTitle,
+    defaultSort,
+}: DataTableProps<T>) {
+    const [sorting, setSorting] = useState<SortingState>(
+        defaultSort ? [{ id: defaultSort.id, desc: defaultSort.desc ?? false }] : []
+    );
 
     const table = useReactTable({
         data,
         columns,
-        state: { sorting, globalFilter },
+        state: { sorting },
         onSortingChange: setSorting,
-        onGlobalFilterChange: setGlobalFilter,
         getCoreRowModel: getCoreRowModel(),
-        getFilteredRowModel: getFilteredRowModel(),
         getSortedRowModel: getSortedRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
+        initialState: {
+            sorting: defaultSort
+                ? [{ id: defaultSort.id, desc: defaultSort.desc ?? false }]
+                : [],
+        },
     });
 
     return (
-        <div className="space-y-4">
-            {/* 🔍 Global Search */}
-            <div className="flex items-center justify-between">
-                <Input
-                    placeholder="Search..."
-                    value={globalFilter ?? ""}
-                    onChange={(e) => setGlobalFilter(e.target.value)}
-                    className="w-64"
-                />
-                {createLink && (
-                    <Link to={createLink}>
-                        <Button className="flex items-center gap-2">
-                            <Plus className="h-4 w-4" />
-                            {createTitle}
-                        </Button>
-                    </Link>
-                )}
-            </div>
+        <div className="p-4 bg-white rounded-xl shadow">
+            {/* Create Button (optional) */}
+            {createLink && (
+                <div className="mb-4 flex justify-end">
+                    <a
+                        href={createLink}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                    >
+                        {createTitle || "Create"}
+                    </a>
+                </div>
+            )}
 
-            {/* 📊 Table */}
-            <div className="rounded-xl border border-gray-200 dark:border-white/[0.05] overflow-hidden">
-                <div className="max-w-full overflow-x-auto">
-                    <Table>
-                        <TableHeader className="bg-brand-200">
-                            {table.getHeaderGroups().map((headerGroup) => (
-                                <TableRow key={headerGroup.id}>
-                                    {headerGroup.headers.map((header) => (
-                                        <TableCell
-                                            isHeader={true}
-                                            key={header.id}
-                                            className="cursor-pointer select-none py-3"
-                                            onclick={header.column.getToggleSortingHandler()}
-                                        >
-                                            {flexRender(header.column.columnDef.header, header.getContext())}
-                                            {{
-                                                asc: " 🔼",
-                                                desc: " 🔽",
-                                            }[header.column.getIsSorted() as string] ?? (
-                                                    header.column.getCanSort() && <ArrowUpDown className="inline ml-1 h-3 w-3" />
-                                                )}
-                                        </TableCell>
-                                    ))}
-                                </TableRow>
+            {/* Table */}
+            <table className="w-full border border-gray-200 rounded-lg overflow-hidden">
+                <thead className="bg-gray-100">
+                    {table.getHeaderGroups().map((headerGroup) => (
+                        <tr key={headerGroup.id}>
+                            {headerGroup.headers.map((header) => (
+                                <th
+                                    key={header.id}
+                                    className="px-4 py-2 text-left font-semibold text-gray-700 cursor-pointer select-none"
+                                    onClick={header.column.getToggleSortingHandler()}
+                                >
+                                    {flexRender(
+                                        header.column.columnDef.header,
+                                        header.getContext()
+                                    )}
+                                    {{
+                                        asc: " 🔼",
+                                        desc: " 🔽",
+                                    }[header.column.getIsSorted() as string] ?? null}
+                                </th>
                             ))}
-                        </TableHeader>
-                        <TableBody>
-                            {table.getRowModel().rows.length ? (
-                                table.getRowModel().rows.map((row) => (
-                                    <TableRow key={row.id}>
-                                        {row.getVisibleCells().map((cell) => (
-                                            <TableCell className="p-2 text-center dark:text-gray-400" key={cell.id}>
-                                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                            </TableCell>
-                                        ))}
-                                    </TableRow>
-                                ))
-                            ) : (
-                                <TableRow>
-                                    <TableCell colSpan={columns.length} className="text-center py-4 dark:text-gray-400">
-                                        No results found.
-                                    </TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                </div>
-            </div>
+                        </tr>
+                    ))}
+                </thead>
+                <tbody>
+                    {table.getRowModel().rows.map((row) => (
+                        <tr
+                            key={row.id}
+                            className="border-t hover:bg-gray-50 transition-colors"
+                        >
+                            {row.getVisibleCells().map((cell) => (
+                                <td key={cell.id} className="px-4 py-2 text-gray-700">
+                                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                </td>
+                            ))}
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
 
-            {/* 📌 Pagination Controls */}
-            <div className="flex items-center justify-between">
-                <div className="text-sm text-gray-500 dark:text-gray-400">
-                    Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
-                </div>
-
-                <div className="flex gap-2">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => table.setPageIndex(0)}
-                        disabled={!table.getCanPreviousPage()}
-                    >
-                        <ChevronsLeft className="h-4 w-4" />
-                    </Button>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => table.previousPage()}
-                        disabled={!table.getCanPreviousPage()}
-                    >
-                        <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => table.nextPage()}
-                        disabled={!table.getCanNextPage()}
-                    >
-                        <ChevronRight className="h-4 w-4" />
-                    </Button>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-                        disabled={!table.getCanNextPage()}
-                    >
-                        <ChevronsRight className="h-4 w-4" />
-                    </Button>
-                </div>
+            {/* Pagination */}
+            <div className="flex justify-between items-center mt-4">
+                <button
+                    onClick={() => table.previousPage()}
+                    disabled={!table.getCanPreviousPage()}
+                    className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+                >
+                    Previous
+                </button>
+                <span>
+                    Page{" "}
+                    <strong>
+                        {table.getState().pagination.pageIndex + 1} of{" "}
+                        {table.getPageCount()}
+                    </strong>
+                </span>
+                <button
+                    onClick={() => table.nextPage()}
+                    disabled={!table.getCanNextPage()}
+                    className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+                >
+                    Next
+                </button>
             </div>
         </div>
     );

@@ -1,3 +1,4 @@
+// src/context/AuthProvider.tsx
 import {
     createContext,
     useContext,
@@ -9,6 +10,7 @@ import { useNavigate } from "react-router-dom";
 import API from "../api/axios";
 import toast from "react-hot-toast";
 import { jwtDecode } from "jwt-decode";
+import axios from "axios";
 
 interface User {
     id: number;
@@ -65,16 +67,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // 🔄 refresh token logic
     const refreshAccessToken = async (): Promise<string | null> => {
         try {
-            const res = await API.post("/auth/token/refresh/", {
-                refresh: localStorage.getItem("refresh"),
-            });
+            const refresh = localStorage.getItem("refresh");
+            if (!refresh) return null;
 
-            localStorage.setItem("access", res.data.access);
-            setAccess(res.data.access);
-            localStorage.setItem('refresh', res.data.refresh);
+            // ⚠️ Use raw axios, not API (avoid recursion)
+            const res = await axios.post(
+                `${import.meta.env.VITE_API_URL}/auth/token/refresh/`,
+                { refresh }
+            );
 
-            // decode payload & update user if needed
-            const payload: JWTPayload = jwtDecode(res.data.access);
+            const newAccess = res.data.access;
+            localStorage.setItem("access", newAccess);
+            setAccess(newAccess);
+
+            // Only update refresh if returned
+            if (res.data.refresh) {
+                localStorage.setItem("refresh", res.data.refresh);
+            }
+
+            // Decode user from token
+            const payload: JWTPayload = jwtDecode(newAccess);
             const refreshedUser: User = {
                 id: payload.user_id,
                 username: payload.username,
@@ -89,7 +101,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setUser(refreshedUser);
             localStorage.setItem("user", JSON.stringify(refreshedUser));
 
-            return res.data.access;
+            return newAccess;
         } catch (err) {
             console.warn("Refresh token failed:", err);
             logout();
@@ -112,7 +124,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const interceptor = API.interceptors.response.use(
             (response) => response,
             async (error) => {
-                const originalRequest = error.config;
+                const originalRequest = error.config as any;
 
                 if (error.response?.status === 401 && !originalRequest._retry) {
                     originalRequest._retry = true;
@@ -163,11 +175,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     // ✅ register
-    const register = async (
-        username: string,
-        password: string,
-        role: string
-    ) => {
+    const register = async (username: string, password: string, role: string) => {
         await API.post("/auth/register/", { username, password, role });
         navigate("/signin", { replace: true });
     };

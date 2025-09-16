@@ -24,6 +24,8 @@ import Enrollments from "./pages/Enrollments/Enrollments";
 import Quiz from "./pages/Quiz/Quiz";
 import InstructorProfiles from "./pages/Users/Instructors";
 import CourseForm from "./components/Forms/CourseForm";
+import DeleteCourse from "./pages/Courses/DeleteCourse";
+import ViewCourse from "./pages/Courses/ViewCourse";
 export default function App() {
   return (
     <>
@@ -42,7 +44,12 @@ export default function App() {
 
             <Route path="/courses" element={<Courses />} />
             <Route path='/add-course' element={<CourseForm />} />
-            <Route path='/edit-course/<id>' element={<CourseForm />} />
+            <Route path='/courses/:id/edit' element={<CourseForm />} />
+            <Route path='/courses/:id/delete' element={<DeleteCourse />} />
+            <Route path='/courses/:id' element={<ViewCourse />} />
+
+
+
             <Route path="/enrollments" element={<Enrollments />} />
             <Route path='/quizes' element={<Quiz />} />
             {/* Forms */}
