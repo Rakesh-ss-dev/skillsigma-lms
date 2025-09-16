@@ -9,7 +9,7 @@ class Category(models.Model):
     
 class Course(models.Model):
     instructor = models.ForeignKey(User, on_delete=models.CASCADE, related_name="courses")
-    title = models.CharField(max_length=255)
+    title = models.CharField(max_length=255,unique=True)
     description = models.TextField()
     categories = models.ManyToManyField("Category", related_name="courses")  # changed here
     thumbnail = models.ImageField(upload_to="courses/", null=True, blank=True)

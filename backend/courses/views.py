@@ -25,3 +25,5 @@ class LessonViewSet(LoggingMixin, viewsets.ModelViewSet):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
     permission_classes = [IsAdminOrInstructor]  # Admin/Instructor only
+    def get_queryset(self):
+        return Lesson.objects.filter(course_id=self.kwargs['course_pk'])
