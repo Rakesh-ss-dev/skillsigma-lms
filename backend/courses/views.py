@@ -21,9 +21,20 @@ class CourseViewSet(LoggingMixin, viewsets.ModelViewSet):
         serializer.save(instructor=self.request.user)
 
 
-class LessonViewSet(LoggingMixin, viewsets.ModelViewSet):
-    queryset = Lesson.objects.all()
+class LessonViewSet(viewsets.ModelViewSet):
     serializer_class = LessonSerializer
-    permission_classes = [IsAdminOrInstructor]  # Admin/Instructor only
+    permission_classes = [IsAdminOrInstructor]
+
     def get_queryset(self):
-        return Lesson.objects.filter(course_id=self.kwargs['course_pk'])
+        course_id = self.kwargs.get('course_pk')
+        if course_id:
+            return Lesson.objects.filter(course_id=course_id)
+        return Lesson.objects.all()
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        course_id = self.kwargs.get('course_pk')
+        if course_id:
+            course = Course.objects.get(id=course_id)
+            context['course'] = course
+        return context

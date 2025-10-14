@@ -6,10 +6,21 @@ from .models import Course, Lesson, Category
 
 
 class LessonSerializer(serializers.ModelSerializer):
+    course = serializers.PrimaryKeyRelatedField(read_only=True)
+
     class Meta:
         model = Lesson
-        fields = ["id", "title", "content", "video_url", "order", "created_at"]
+        fields = [
+            'id', 'course', 'title', 'content', 
+            'content_file', 'video_url', 'order', 
+            'resources', 'created_at'
+        ]
 
+    def create(self, validated_data):
+        course = self.context.get('course')
+        if not course:
+            raise serializers.ValidationError({"course": "Course context is missing."})
+        return Lesson.objects.create(course=course, **validated_data)
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:

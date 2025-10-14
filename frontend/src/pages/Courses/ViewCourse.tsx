@@ -6,8 +6,9 @@ import Tab from "@mui/material/Tab";
 import Box from '@mui/material/Box';
 import Assessment from "../../components/course/Assessment";
 import CourseContent from "../../components/course/CourseContent";
-import CourseDetails from "../../components/course/CourseDetails";
+import Badge from "../../components/ui/badge/Badge";
 const ViewCourse = () => {
+
     const [course, setCourse] = useState<any>(null);
     const [value, setValue] = useState(0);
     const { id } = useParams<{ id: string }>();
@@ -21,27 +22,31 @@ const ViewCourse = () => {
     }, []);
     return (
         <div className="max-w-7xl mx-auto mt-10 bg-white shadow-md rounded dark:bg-gray-800 rounded-lg">
-
             {course ? (
                 <div>
-                    <div className="p-5 flex flex-col md:flex-row gap-3 justify-start items-center border-b border-gray-200 dark:border-gray-700">
-                        <div><img src={course.thumbnail} alt={course.title} width={100} /></div>
-                        <div>
-                            <h1 className="text-2xl font-bold mb-2">{course.title}</h1>
-                            <p>{course.description}</p>
+                    <div className="flex flex-col md:flex-row gap-5 border-b border-gray-200 dark:border-gray-700">
+                        <div className="p-5 flex flex-col md:flex-row gap-3 justify-start items-center">
+                            <div><img src={course.thumbnail} alt={course.title} width={100} /></div>
+                            <div>
+                                <h1 className="text-2xl font-bold mb-2 text-gray-900 dark:text-gray-100">{course.title}</h1>
+                                <p className="text-gray-700 dark:text-gray-300">{course.description}</p>
+                            </div>
+                        </div>
+                        <div className="p-5 flex flex-col gap-2 justify-be">
+                            <div className="text-gray-700 dark:text-gray-300">Instructor: {course.instructor.first_name} {course.instructor.last_name}</div>
+                            <div className="flex flex-row gap-2 text-gray-700 dark:text-gray-300">Categories:<span className="flex flex-row gap-2">{course.categories.map((cat: any) => <Badge key={cat.id}>{cat.name}</Badge>)}</span></div>
                         </div>
                     </div>
                     <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                        <Tabs value={value} onChange={(e: any, newValue) => { console.log(e); setValue(newValue) }}>
-                            <Tab label="Details" sx={{ fontFamily: "inherit" }} />
+                        <Tabs value={value} onChange={(e, newValue) => { console.log(e); setValue(newValue) }}>
                             <Tab label="Content" sx={{ fontFamily: "inherit" }} />
                             <Tab label="Assessments" sx={{ fontFamily: "inherit" }} />
                         </Tabs>
                     </Box>
-                    {value === 0 && <CourseDetails course={course} />}
-                    {value === 1 && <CourseContent course={course} />}
-                    {value === 2 && <Assessment course={course} />}
-
+                    <Box>
+                        {value === 0 && <CourseContent course={course} />}
+                        {value === 1 && <Assessment course={course} />}
+                    </Box>
                 </div>
             ) : (
                 <p>Loading...</p>

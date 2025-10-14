@@ -26,6 +26,12 @@ import InstructorProfiles from "./pages/Users/Instructors";
 import CourseForm from "./components/Forms/CourseForm";
 import DeleteCourse from "./pages/Courses/DeleteCourse";
 import ViewCourse from "./pages/Courses/ViewCourse";
+import "froala-editor/css/froala_editor.pkgd.min.css";
+import "froala-editor/css/froala_style.min.css";
+
+import "froala-editor/js/plugins.pkgd.min.js"; // load all plugins
+import Editor from "./components/Editor/RichTextEditor";
+import DeleteLesson from "./pages/Courses/DeleteLesson";
 export default function App() {
   return (
     <>
@@ -47,9 +53,9 @@ export default function App() {
             <Route path='/courses/:id/edit' element={<CourseForm />} />
             <Route path='/courses/:id/delete' element={<DeleteCourse />} />
             <Route path='/courses/:id' element={<ViewCourse />} />
-
-
-
+            <Route path='/courses/:id/module/:moduleId/delete' element={<DeleteLesson />} />
+            <Route path="/editor" element={<Editor initialValue="" onChange={(html: any) => console.log(html)} />
+            } />
             <Route path="/enrollments" element={<Enrollments />} />
             <Route path='/quizes' element={<Quiz />} />
             {/* Forms */}

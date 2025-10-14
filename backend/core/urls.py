@@ -24,8 +24,6 @@ courses_router = routers.NestedDefaultRouter(router, r'courses', lookup='course'
 courses_router.register(r'lessons', LessonViewSet, basename='course-lessons')
 courses_router.register(r'quizzes', QuizViewSet, basename='course-quizzes')
 
-router.register(r'lessons', LessonViewSet)
-
 # Enrollments
 router.register(r'enrollments', EnrollmentViewSet)
 router.register(r'group-enrollments', GroupEnrollmentViewSet)

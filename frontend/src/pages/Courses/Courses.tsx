@@ -21,7 +21,7 @@ export default function Courses() {
     const columns: ColumnDef<Course>[] = [
         {
             accessorKey: "title", header: "Course", cell: ({ row }) => (
-                <Link className="flex items-center gap-3" to={`/courses/${row.original.id}`} >
+                <Link className="flex items-center justify-center gap-3" to={`/courses/${row.original.id}`} >
                     {row.original.thumbnail && <img src={row.original.thumbnail} alt={row.original.title} className="h-10 w-10 rounded object-cover" />}
                     <span>{row.original.title}</span>
                 </Link>
@@ -69,11 +69,7 @@ export default function Courses() {
                 description="courses"
             />
             <PageBreadcrumb pageTitle="Courses" />
-            <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] lg:p-6">
-                <div className="space-y-6">
-                    <DataTable<Course> data={courses} columns={columns} createLink="/add-course" createTitle="Add Course" defaultSort={{ id: 'created_at', desc: true }} />
-                </div>
-            </div>
+            <DataTable<Course> data={courses} columns={columns} createLink="/add-course" createTitle="Add Course" defaultSort={{ id: 'created_at', desc: true }} />
         </>
     );
 }

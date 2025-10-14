@@ -44,7 +44,7 @@ export function DataTable<T extends object>({
     });
 
     return (
-        <div className="p-4 bg-white rounded-xl shadow">
+        <div className="p-4 bg-white rounded-xl shadow dark:bg-gray-800">
             {/* Create Button (optional) */}
             {createLink && (
                 <div className="mb-4 flex justify-end">
@@ -59,13 +59,13 @@ export function DataTable<T extends object>({
 
             {/* Table */}
             <table className="w-full border border-gray-200 rounded-lg overflow-hidden">
-                <thead className="bg-gray-100">
+                <thead className="bg-gray-100 dark:bg-gray-700">
                     {table.getHeaderGroups().map((headerGroup) => (
                         <tr key={headerGroup.id}>
                             {headerGroup.headers.map((header) => (
                                 <th
                                     key={header.id}
-                                    className="px-4 py-2 text-left font-semibold text-gray-700 cursor-pointer select-none"
+                                    className="px-4 py-2 text-center font-semibold text-gray-700 dark:text-gray-300 cursor-pointer select-none"
                                     onClick={header.column.getToggleSortingHandler()}
                                 >
                                     {flexRender(
@@ -85,10 +85,10 @@ export function DataTable<T extends object>({
                     {table.getRowModel().rows.map((row) => (
                         <tr
                             key={row.id}
-                            className="border-t hover:bg-gray-50 transition-colors"
+                            className="border-t text-center bg-white hover:bg-gray-50 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors"
                         >
                             {row.getVisibleCells().map((cell) => (
-                                <td key={cell.id} className="px-4 py-2 text-gray-700">
+                                <td key={cell.id} className="px-4 py-2 text-gray-700 dark:text-gray-300">
                                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                 </td>
                             ))}

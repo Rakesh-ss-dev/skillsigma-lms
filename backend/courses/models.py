@@ -28,11 +28,11 @@ class Lesson(models.Model):
     content_file = models.FileField(upload_to="lessons/content_files/", null=True, blank=True)
     video_url = models.URLField(blank=True, null=True)
     order = models.PositiveIntegerField(default=0)
-    created_at = models.DateTimeField(auto_now_add=True)
     resources = models.FileField(upload_to="lessons/resources/", null=True, blank=True)
-
+    created_at = models.DateTimeField(auto_now_add=True)
     class Meta:
         ordering = ['order']
+        unique_together = ('course', 'order')
 
     def __str__(self):
         return f"{self.course.title} - {self.title}"

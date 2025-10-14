@@ -7,7 +7,8 @@ class QuizViewSet(LoggingMixin, viewsets.ModelViewSet):
     queryset = Quiz.objects.all()
     serializer_class = QuizSerializer
     permission_classes = [permissions.IsAuthenticated]  # Instructor/Admin
-
+    def get_queryset(self):
+        return Quiz.objects.filter(course_id=self.kwargs['course_pk'])
 
 class QuestionViewSet(LoggingMixin, viewsets.ModelViewSet):
     queryset = Question.objects.all()
