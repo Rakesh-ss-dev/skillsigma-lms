@@ -29,10 +29,10 @@ router.register(r'enrollments', EnrollmentViewSet)
 router.register(r'group-enrollments', GroupEnrollmentViewSet)
 
 # Quizzes
-router.register(r'quizzes', QuizViewSet)
-router.register(r'questions', QuestionViewSet)
-router.register(r'options', OptionViewSet)
-router.register(r'submissions', SubmissionViewSet)
+router.register(r'quiz', QuizViewSet)
+router.register(r'question', QuestionViewSet)
+router.register(r'option', OptionViewSet)
+router.register(r'submission', SubmissionViewSet)
 
 # Certificates
 router.register(r'certificates', CertificateViewSet)
