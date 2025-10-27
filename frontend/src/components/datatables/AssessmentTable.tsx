@@ -4,6 +4,10 @@ import { ColumnDef } from "@tanstack/react-table";
 import Button from "../ui/button/Button";
 import { Link, useParams } from "react-router";
 import { Pen, Trash } from "lucide-react";
+import { useModal } from "../../hooks/useModal";
+
+import AssessmentBuilder from "../course/AssessmentBuilder";
+import { useState } from "react";
 interface Assessment {
     id: number;
     title: string;
@@ -11,6 +15,13 @@ interface Assessment {
 }
 
 const AssessmentTable = ({ quizzes }: { quizzes: Assessment[] }) => {
+    const { isOpen, openModal, closeModal } = useModal();
+    const [selectedAssessmentId, setSelectedAssessmentId] = useState<number>(0);
+    const editAction = (e: React.MouseEvent, id: number) => {
+        e.preventDefault();
+        setSelectedAssessmentId(id);
+        openModal();
+    }
     const { courseId } = useParams();
     const columns: ColumnDef<Assessment>[] = [
         { accessorKey: "title", header: "Title" },
@@ -20,8 +31,7 @@ const AssessmentTable = ({ quizzes }: { quizzes: Assessment[] }) => {
                 const id = getValue<number>();
                 return (
                     <div className="flex justify-center gap-3">
-
-                        <Button className="px-3 py-2 text-sm rounded bg-primary-100 text-blue-700 flex flex-row gap-1 items-center"><Pen className="h-4" />Edit</Button>
+                        <Button onClick={(e) => editAction(e, id)}><Pen className="h-4" />Edit</Button>
                         <Link to={`/courses/${courseId}/assessment/${id}/delete`} className="px-3 py-2 text-sm rounded bg-red-100 text-red-700 flex flex-row gap-1 items-center"><Trash className="h-4" />Delete</Link>
                     </div>
                 );
@@ -30,7 +40,10 @@ const AssessmentTable = ({ quizzes }: { quizzes: Assessment[] }) => {
     ];
 
     return (
-        <DataTable data={quizzes} columns={columns} />
+        <>
+            <DataTable data={quizzes} columns={columns} />
+            <AssessmentBuilder isOpen={isOpen} closeModal={closeModal} mode="edit" assessmentId={selectedAssessmentId} />
+        </>
     )
 }
 

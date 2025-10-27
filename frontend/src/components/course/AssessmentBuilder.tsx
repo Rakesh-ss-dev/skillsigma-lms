@@ -39,6 +39,7 @@ interface Assessment {
     description: string;
     questions: Question[];
     course: number;
+
 }
 
 // --- Component ---
@@ -56,18 +57,22 @@ const AssessmentForm: React.FC<AssessmentFormProps> = ({ isOpen, closeModal, mod
         const response = await API.get("/question/");
         setDbQuestions(response.data.results);
     };
-    if (mode === "edit" && assessmentId) {
-        useEffect(() => {
+    useEffect(() => {
+        if (mode === "edit" && assessmentId) {
             const fetchAssessment = async () => {
-                const response = await API.get(`/assessments/${assessmentId}/`);
-                const { title, description, questions } = response.data;
-                setTitle(title);
-                setDescription(description);
-                setQuestions(questions);
+                try {
+                    const response = await API.get(`courses/${courseId}/quizzes/${assessmentId}/`);
+                    const { title, description, questions } = response.data;
+                    setTitle(title);
+                    setDescription(description);
+                    setQuestions(questions);
+                } catch (err) {
+                    console.error("Failed to load assessment:", err);
+                }
             };
             fetchAssessment();
-        }, [assessmentId]);
-    }
+        }
+    }, [mode, assessmentId]);
     const handleClose = (e: React.MouseEvent) => {
         e.preventDefault();
         closeModal();
@@ -195,10 +200,14 @@ const AssessmentForm: React.FC<AssessmentFormProps> = ({ isOpen, closeModal, mod
         if (!validate()) return;
         const assessmentData: Assessment = { title, description, questions, course: Number(courseId) };
         try {
-            const response = await API.post("/quiz/", assessmentData);
-            toast.success("Assessment created successfully!");
+            if (mode === "edit") {
+                await API.put(`/courses/${courseId}/quizzes/${assessmentId}/`, assessmentData);
+                toast.success("Assessment updated successfully!");
+            } else {
+                await API.post("/quiz/", assessmentData);
+                toast.success("Assessment created successfully!");
+            }
             closeModal();
-            console.log(response);
         } catch (error) {
             console.error("Error submitting assessment:", error);
             toast.error("Error submitting assessment. Please try again.");
@@ -209,7 +218,7 @@ const AssessmentForm: React.FC<AssessmentFormProps> = ({ isOpen, closeModal, mod
     return (
         <Modal isOpen={isOpen} dismissable={false} onClose={closeModal} className="max-w-[800px] m-4 p-0">
             <div className="p-6 max-w-5xl mx-auto bg-white">
-                <h2 className="text-2xl font-semibold mb-4">📝 Create Assessment</h2>
+                <h2 className="text-2xl font-semibold mb-4">{mode === "edit" ? "✏️ Edit Assessment" : "📝 Create Assessment"}</h2>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     {/* Title & Description */}
                     <div>
