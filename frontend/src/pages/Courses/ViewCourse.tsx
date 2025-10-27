@@ -11,10 +11,10 @@ const ViewCourse = () => {
 
     const [course, setCourse] = useState<any>(null);
     const [value, setValue] = useState(0);
-    const { id } = useParams<{ id: string }>();
+    const { courseId } = useParams<{ courseId: string }>();
     const fetchCourse = async () => {
         // Fetch course details using the id
-        const response = await API.get(`/courses/${id}`);
+        const response = await API.get(`/courses/${courseId}`);
         setCourse(response.data);
     }
     useEffect(() => {
@@ -38,7 +38,7 @@ const ViewCourse = () => {
                         </div>
                     </div>
                     <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                        <Tabs value={value} onChange={(e, newValue) => { console.log(e); setValue(newValue) }}>
+                        <Tabs value={value} onChange={(e, newValue) => { e.preventDefault(); setValue(newValue); }}>
                             <Tab label="Content" sx={{ fontFamily: "inherit" }} />
                             <Tab label="Assessments" sx={{ fontFamily: "inherit" }} />
                         </Tabs>

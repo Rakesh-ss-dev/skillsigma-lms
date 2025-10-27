@@ -6,11 +6,11 @@ import ComponentCard from "../../components/common/ComponentCard";
 
 const DeleteLesson = () => {
     const navigate = useNavigate();
-    const { moduleId, id } = useParams();
+    const { moduleId, courseId } = useParams();
     const [lesson, setLesson] = useState({} as any);
     const fetchLesson = async () => {
         try {
-            const response = await API.get(`/courses/${id}/lessons/${moduleId}`);
+            const response = await API.get(`/courses/${courseId}/lessons/${moduleId}`);
             setLesson(response.data);
         } catch (error) {
             toast.error("Error fetching lesson:" + error);
@@ -19,9 +19,9 @@ const DeleteLesson = () => {
     const handleDelete = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            await API.delete(`/courses/${id}/lessons/${moduleId}/`);
+            await API.delete(`/courses/${courseId}/lessons/${moduleId}/`);
             toast.success("Lesson deleted successfully");
-            navigate(`/courses/${id}`);
+            navigate(`/courses/${courseId}`);
         } catch (error) {
             toast.error("Error deleting lesson:" + error);
         }

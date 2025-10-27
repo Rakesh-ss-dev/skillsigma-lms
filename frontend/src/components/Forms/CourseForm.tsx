@@ -14,7 +14,7 @@ import toast from "react-hot-toast"
 import { useNavigate, useParams } from "react-router-dom"
 
 const CourseForm = () => {
-    const id = useParams().id;
+    const id = useParams().courseId;
     const navigate = useNavigate();
     const [title, setTitle] = useState('');
     const [instructor, setInstructor] = useState('');

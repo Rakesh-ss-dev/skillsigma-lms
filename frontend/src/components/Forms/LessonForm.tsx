@@ -14,7 +14,7 @@ interface LessonFormProps {
     lessonId?: number;
 }
 function LessonForm({ isOpen, closeModal, mode, lessonId }: LessonFormProps) {
-    const { id } = useParams();
+    const { courseId } = useParams();
     const [formdata, setFormData] = useState({
         title: "",
         order: "",
@@ -27,7 +27,7 @@ function LessonForm({ isOpen, closeModal, mode, lessonId }: LessonFormProps) {
         if (mode === "edit" && lessonId) {
             const fetchLesson = async () => {
                 try {
-                    const response = await API.get(`/courses/${id}/lessons/${lessonId}`);
+                    const response = await API.get(`/courses/${courseId}/lessons/${lessonId}`);
                     setFormData(response.data);
                 } catch (error) {
                     toast.error("Error fetching lesson:" + error);
@@ -77,12 +77,12 @@ function LessonForm({ isOpen, closeModal, mode, lessonId }: LessonFormProps) {
                 fd.append("resources", formdata.resources);
             }
             if (mode === "edit" && lessonId) {
-                await API.patch(`/courses/${id}/lessons/${lessonId}/`, fd, {
+                await API.patch(`/courses/${courseId}/lessons/${lessonId}/`, fd, {
                     headers: { "Content-Type": "multipart/form-data" },
                 });
                 toast.success("Lesson Updated Successfully")
             } else {
-                await API.post(`/courses/${id}/lessons/`, fd, {
+                await API.post(`/courses/${courseId}/lessons/`, fd, {
                     headers: { "Content-Type": "multipart/form-data" },
                 });
                 toast.success("Lesson Added Successfully");

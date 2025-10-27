@@ -19,7 +19,7 @@ interface Lesson {
 }
 
 const LessonTable = ({ lessons }: { lessons: Lesson[] }) => {
-    const { id } = useParams();
+    const { courseId } = useParams();
     const { isOpen, openModal, closeModal } = useModal();
     const [selectedLessonId, setSelectedLessonId] = useState<number>(0);
     const editAction = (e: React.MouseEvent, id: number) => {
@@ -95,7 +95,7 @@ const LessonTable = ({ lessons }: { lessons: Lesson[] }) => {
                     <div className="flex justify-center gap-3">
 
                         <Button onClick={(e) => editAction(e, row.original.id)} className="px-3 py-2 text-sm rounded bg-primary-100 text-blue-700 flex flex-row gap-1 items-center"><Pen className="h-4" />Edit</Button>
-                        <Link to={`/courses/${id}/module/${row.original.id}/delete`} className="px-3 py-2 text-sm rounded bg-red-100 text-red-700 flex flex-row gap-1 items-center"><Trash className="h-4" />Delete</Link>
+                        <Link to={`/courses/${courseId}/module/${row.original.id}/delete`} className="px-3 py-2 text-sm rounded bg-red-100 text-red-700 flex flex-row gap-1 items-center"><Trash className="h-4" />Delete</Link>
                     </div>
 
                 </>

@@ -6,10 +6,10 @@ import Button from "../../components/ui/button/Button";
 
 const DeleteCourse = () => {
     const navigate = useNavigate();
-    const { id } = useParams<{ id: string }>();
+    const { courseId } = useParams<{ courseId: string }>();
     const [course, setCourse] = useState<any>(null);
     const fetchcourse = async () => {
-        const response = await API.get(`/courses/${id}`);
+        const response = await API.get(`/courses/${courseId}`);
         setCourse(response.data);
     }
     useEffect(() => {
@@ -26,7 +26,7 @@ const DeleteCourse = () => {
                             <div className="flex justify-end mt-4 gap-2">
                                 <Button onClick={() => navigate(-1)}>Cancel</Button>
                                 <Button onClick={async () => {
-                                    await API.delete(`/courses/${id}/`);
+                                    await API.delete(`/courses/${courseId}/`);
                                     navigate("/courses");
                                 }}>Confirm Delete</Button>
                             </div>

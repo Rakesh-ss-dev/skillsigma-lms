@@ -26,6 +26,7 @@ import InstructorProfiles from "./pages/Users/Instructors";
 import CourseForm from "./components/Forms/CourseForm";
 import DeleteCourse from "./pages/Courses/DeleteCourse";
 import ViewCourse from "./pages/Courses/ViewCourse";
+import DeleteAssessment from "./pages/Courses/DeleteAssessment";
 import "froala-editor/css/froala_editor.pkgd.min.css";
 import "froala-editor/css/froala_style.min.css";
 
@@ -50,10 +51,11 @@ export default function App() {
 
             <Route path="/courses" element={<Courses />} />
             <Route path='/add-course' element={<CourseForm />} />
-            <Route path='/courses/:id/edit' element={<CourseForm />} />
-            <Route path='/courses/:id/delete' element={<DeleteCourse />} />
-            <Route path='/courses/:id' element={<ViewCourse />} />
-            <Route path='/courses/:id/module/:moduleId/delete' element={<DeleteLesson />} />
+            <Route path='/courses/:courseId/edit' element={<CourseForm />} />
+            <Route path='/courses/:courseId/delete' element={<DeleteCourse />} />
+            <Route path='/courses/:courseId' element={<ViewCourse />} />
+            <Route path='/courses/:courseId/module/:moduleId/delete' element={<DeleteLesson />} />
+            <Route path='/courses/:courseId/assessment/:assessmentId/delete' element={<DeleteAssessment />} />
             <Route path="/editor" element={<Editor initialValue="" onChange={(html: any) => console.log(html)} />
             } />
             <Route path="/enrollments" element={<Enrollments />} />

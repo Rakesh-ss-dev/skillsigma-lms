@@ -1,0 +1,4 @@
+question_text,question_type,points,option_1_text,option_1_correct,option_2_text,option_2_correct,option_3_text,option_3_correct
+"What is Python?",mcq,5,"A programming language",true,"A snake",false,"A reptile",false
+"Is 2+2=4?",tf,2,"True",true,"False",false,,
+"What keyword defines a function?",short,3,,,,,

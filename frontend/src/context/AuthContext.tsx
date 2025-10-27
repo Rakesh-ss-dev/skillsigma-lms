@@ -64,13 +64,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         localStorage.getItem("access")
     );
 
-    // 🔄 refresh token logic
+    // ------------------ Role-based endpoints ------------------
+    const getUserEndpoint = (role: string) => {
+        switch (role) {
+            case "admin":
+                return "/admin-users/";
+            case "instructor":
+                return "/users/";
+            case "student":
+            default:
+                return "/users/me/";
+        }
+    };
+
+    // ------------------ Refresh token logic ------------------
     const refreshAccessToken = async (): Promise<string | null> => {
         try {
             const refresh = localStorage.getItem("refresh");
             if (!refresh) return null;
 
-            // ⚠️ Use raw axios, not API (avoid recursion)
             const res = await axios.post(
                 `${import.meta.env.VITE_API_URL}/auth/token/refresh/`,
                 { refresh }
@@ -80,12 +92,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             localStorage.setItem("access", newAccess);
             setAccess(newAccess);
 
-            // Only update refresh if returned
             if (res.data.refresh) {
                 localStorage.setItem("refresh", res.data.refresh);
             }
 
-            // Decode user from token
             const payload: JWTPayload = jwtDecode(newAccess);
             const refreshedUser: User = {
                 id: payload.user_id,
@@ -109,7 +119,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
-    // 🔒 verify token on load
+    // ------------------ Verify token on load ------------------
     useEffect(() => {
         if (access) {
             API.post("/auth/token/verify/", { token: access }).catch(async () => {
@@ -119,7 +129,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
     }, [access]);
 
-    // 🔄 Axios interceptor for auto-refresh on 401
+    // ------------------ Axios interceptor for auto-refresh ------------------
     useEffect(() => {
         const interceptor = API.interceptors.response.use(
             (response) => response,
@@ -131,7 +141,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                     const newAccess = await refreshAccessToken();
                     if (newAccess) {
                         originalRequest.headers["Authorization"] = `Bearer ${newAccess}`;
-                        return API(originalRequest); // retry failed request
+                        return API(originalRequest);
                     }
                 }
                 return Promise.reject(error);
@@ -143,7 +153,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         };
     }, []);
 
-    // ✅ login
+    // ------------------ Login ------------------
     const login = async (username: string, password: string) => {
         try {
             const res = await API.post("/auth/login/", { username, password });
@@ -174,13 +184,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
-    // ✅ register
+    // ------------------ Register ------------------
     const register = async (username: string, password: string, role: string) => {
         await API.post("/auth/register/", { username, password, role });
         navigate("/signin", { replace: true });
     };
 
-    // ✅ logout
+    // ------------------ Logout ------------------
     const logout = async () => {
         try {
             await API.post("/auth/logout/", {
@@ -202,7 +212,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         navigate("/signin", { replace: true });
     };
 
-    // ✅ update profile
+    // ------------------ Update profile ------------------
     const updateUserProfile = async (data: Partial<User>): Promise<User> => {
         if (!user) throw new Error("No user logged in");
 
@@ -218,10 +228,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             headers = { "Content-Type": "multipart/form-data" };
         }
 
-        const res = await API.patch(`/users/${user.id}/`, payload, { headers });
+        const endpoint = getUserEndpoint(user.role);
+        const url =
+            user.role === "admin" && data.id
+                ? `${endpoint}${data.id}/`
+                : endpoint;
+
+        const res = await API.patch(url, payload, { headers });
         const updatedUser: User = res.data;
-        setUser(updatedUser);
-        localStorage.setItem("user", JSON.stringify(updatedUser));
+
+        // Update local storage if current user updated themselves
+        if (user.id === updatedUser.id) {
+            setUser(updatedUser);
+            localStorage.setItem("user", JSON.stringify(updatedUser));
+        }
+
         return updatedUser;
     };
 

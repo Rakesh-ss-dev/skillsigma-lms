@@ -11,7 +11,6 @@ export default function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
     if (!user) {
         return <Navigate to="/signin" replace />;
     }
-
     if (allowedRoles && !allowedRoles.includes(user.role)) {
         return <Navigate to={`/`} replace />;
     }
