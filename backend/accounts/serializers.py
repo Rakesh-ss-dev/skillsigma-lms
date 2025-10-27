@@ -38,6 +38,8 @@ class UserSerializer(BaseUserSerializer):
 class InstructorSerializer(BaseUserSerializer):
     role = serializers.CharField(default="instructor", read_only=True)
 
+class AdminSerializer(BaseUserSerializer):
+    role=serializers.CharField(default="admin",read_only=True)
 
 # -------------------------------
 # Student Group Serializer

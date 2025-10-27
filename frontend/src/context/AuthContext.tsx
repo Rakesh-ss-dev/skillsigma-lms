@@ -68,12 +68,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const getUserEndpoint = (role: string) => {
         switch (role) {
             case "admin":
-                return "/admin-users/";
+                return "/admin/";
             case "instructor":
-                return "/users/";
+                return "/instructor/";
             case "student":
             default:
-                return "/users/me/";
+                return "/user/";
         }
     };
 
@@ -229,16 +229,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
 
         const endpoint = getUserEndpoint(user.role);
-        const url =
-            user.role === "admin" && data.id
-                ? `${endpoint}${data.id}/`
-                : endpoint;
-
+        const url = `${endpoint}${user.id}/`;
         const res = await API.patch(url, payload, { headers });
         const updatedUser: User = res.data;
-
-        // Update local storage if current user updated themselves
-        if (user.id === updatedUser.id) {
+        if (user.id == updatedUser.id) {
             setUser(updatedUser);
             localStorage.setItem("user", JSON.stringify(updatedUser));
         }

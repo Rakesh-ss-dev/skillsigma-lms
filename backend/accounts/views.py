@@ -3,9 +3,10 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_tracking.mixins import LoggingMixin
-
+from .mixins import SafeLoggingMixin
 from .models import User, StudentGroup
 from .serializers import (
+    AdminSerializer,
     UserSerializer,
     InstructorSerializer,
     StudentGroupSerializer,
@@ -21,22 +22,51 @@ from .permissions import IsAdminOrInstructor
 # Student User ViewSet
 # -------------------------------
 class UserViewSet(LoggingMixin, viewsets.ModelViewSet):
-    queryset = User.objects.none()  # placeholder for DRF
-    serializer_class = UserSerializer
+    queryset = User.objects.none()
+    serializer_class = AdminSerializer
     permission_classes = [IsAdminOrInstructor]
 
     def get_queryset(self):
         return User.objects.filter(role="student")
 
+    def partial_update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
 
 class InstructorViewSet(LoggingMixin, viewsets.ModelViewSet):
-    queryset = User.objects.none()  # placeholder for DRF
-    serializer_class = InstructorSerializer
+    queryset = User.objects.none()
+    serializer_class = AdminSerializer
     permission_classes = [IsAdminOrInstructor]
 
     def get_queryset(self):
         return User.objects.filter(role="instructor")
 
+    def partial_update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class AdminViewSet(SafeLoggingMixin, viewsets.ModelViewSet):
+    queryset = User.objects.none()
+    serializer_class = AdminSerializer
+    permission_classes = [IsAdminOrInstructor]
+
+    def get_queryset(self):
+        return User.objects.filter(role="admin")
+
+    def partial_update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
 
 # -------------------------------
 # Student Group ViewSet
