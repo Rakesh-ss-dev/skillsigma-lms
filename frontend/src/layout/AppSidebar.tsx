@@ -31,13 +31,20 @@ const navItems: NavItem[] = [
   {
     icon: <RiUserSettingsLine />,
     name: "Users",
-    subItems: [{
-      name: "Instructors",
-      path: '/instructors'
-    }, {
-      name: "Learners",
-      path: '/learners'
-    }]
+    subItems: [
+      {
+        name: "Student Group",
+        path: '/student-group'
+      },
+      {
+        name: "Learners",
+        path: '/learners'
+      },
+      {
+        name: "Instructors",
+        path: '/instructors'
+      }
+    ]
   },
 ];
 

@@ -4,7 +4,9 @@ import PageMeta from "../../components/common/PageMeta";
 import { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "../../components/tables/Datatables/DataTable";
 import API from "../../api/axios";
-
+import { useModal } from "../../hooks/useModal";
+import StudentsForm from "../../components/Forms/StudentsForm";
+import Button from "../../components/ui/button/Button";
 export default function Users() {
     interface User {
         id: number,
@@ -30,6 +32,7 @@ export default function Users() {
     useEffect(() => {
         getUsers();
     }, [])
+    const { isOpen, openModal, closeModal } = useModal();
     return (
         <>
             <PageMeta
@@ -37,11 +40,16 @@ export default function Users() {
                 description="List of users"
             />
             <PageBreadcrumb pageTitle="Learners" />
+            <div className="flex align-end justify-end py-3">
+                <Button onClick={openModal}>Add Student</Button>
+            </div>
             <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] lg:p-6">
+
                 <div className="space-y-6">
                     <DataTable<User> data={users} columns={columns} />
                 </div>
             </div>
+            <StudentsForm isOpen={isOpen} closeModal={closeModal} />
         </>
     );
 }

@@ -33,6 +33,7 @@ import "froala-editor/css/froala_style.min.css";
 import "froala-editor/js/plugins.pkgd.min.js"; // load all plugins
 import Editor from "./components/Editor/RichTextEditor";
 import DeleteLesson from "./pages/Courses/DeleteLesson";
+import StudentGroup from "./pages/Users/StudentGroup";
 export default function App() {
   return (
     <>
@@ -47,7 +48,7 @@ export default function App() {
             <Route path="/profile" element={<UserProfiles />} />
             <Route path="/learners" element={<Users />} />
             <Route path="/instructors" element={<InstructorProfiles />} />
-
+            <Route path="/student-group" element={<StudentGroup />} />
 
             <Route path="/courses" element={<Courses />} />
             <Route path='/add-course' element={<CourseForm />} />
