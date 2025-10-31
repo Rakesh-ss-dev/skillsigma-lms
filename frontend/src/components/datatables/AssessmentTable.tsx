@@ -6,7 +6,7 @@ import { Link, useParams } from "react-router";
 import { Pen, Trash } from "lucide-react";
 import { useModal } from "../../hooks/useModal";
 
-import AssessmentBuilder from "../course/AssessmentBuilder";
+import AssessmentBuilder from "../Forms/AssessmentBuilder";
 import { useState } from "react";
 interface Assessment {
     id: number;

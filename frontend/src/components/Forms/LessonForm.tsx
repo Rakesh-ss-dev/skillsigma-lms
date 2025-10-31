@@ -142,7 +142,7 @@ function LessonForm({ isOpen, closeModal, mode, lessonId }: LessonFormProps) {
 
                             <div>
                                 <Label>Content File</Label>
-                                <Input type="file" name="content_file" onChange={handleChange} />
+                                <Input type="file" accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx" name="content_file" onChange={handleChange} />
                                 {formdata.content_file && (<div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
                                     <img src={String(formdata.content_file)} alt="Content preview" width={100} className="text-blue-600 hover:text-blue-800" />
                                 </div>)}
@@ -150,7 +150,7 @@ function LessonForm({ isOpen, closeModal, mode, lessonId }: LessonFormProps) {
 
                             <div>
                                 <Label>Resources File</Label>
-                                <Input type="file" name="resources" onChange={handleChange} />
+                                <Input type="file" accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx" name="resources" onChange={handleChange} />
                                 {formdata.resources && (<div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
                                     <img src={String(formdata.resources)} alt="Content preview" width={100} className="text-blue-600 hover:text-blue-800" />
                                 </div>)}

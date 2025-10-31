@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import API from "../../api/axios";
 import Button from "../ui/button/Button";
 import { useModal } from "../../hooks/useModal";
-import AssessmentBuilder from "./AssessmentBuilder";
+import AssessmentBuilder from "../Forms/AssessmentBuilder";
 import AssessmentTable from "../datatables/AssessmentTable";
 
 
