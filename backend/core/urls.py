@@ -16,7 +16,6 @@ router.register(r'users', UserViewSet,basename='user')
 router.register(r'groups', StudentGroupViewSet)
 
 router.register(r'instructors',InstructorViewSet,basename="instructor")
-
 router.register(r'admin',AdminViewSet,basename="admin")
 # Courses
 router.register(r'categories',CategoryViewSet)

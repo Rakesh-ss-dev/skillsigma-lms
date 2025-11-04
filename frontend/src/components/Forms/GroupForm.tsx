@@ -9,6 +9,7 @@ import Select from "../form/Select";
 import Papa from "papaparse";
 import { CloseIcon } from "../../icons";
 import Badge from "../ui/badge/Badge";
+import toast from "react-hot-toast";
 
 interface GroupFormProps {
     isOpen: boolean;
@@ -40,15 +41,18 @@ const GroupForm = ({ isOpen, closeModal, mode, groupId }: GroupFormProps) => {
 
     const getGroupDetails = async (id: any) => {
         const response = await API.get(`/groups/${id}`);
-        console.log(response.data);
         setName(response.data.name);
         setDescription(response.data.description);
-    }
-
-    if (mode == 'edit' && groupId) {
-        getGroupDetails(groupId);
+        setStudents(response.data.students_info)
+        setCourse(response.data.courses_info[0].id)
 
     }
+    useEffect(() => {
+        if (groupId) {
+            getGroupDetails(groupId);
+        }
+    }, [groupId])
+
 
     // ✅ Fetch courses from API
     const getCourses = async () => {
@@ -127,9 +131,11 @@ const GroupForm = ({ isOpen, closeModal, mode, groupId }: GroupFormProps) => {
         try {
             if (mode === "edit") {
                 // update group (if needed)
-                // await API.put(`/groups/${groupId}/`, payload);
+                await API.put(`/groups/${groupId}/`, payload);
+                toast.success('Group Updated Successfully!')
             } else {
                 await API.post("/groups/", payload);
+                toast.success('Group Added Successfully!')
             }
 
             closeModal();
@@ -166,6 +172,7 @@ const GroupForm = ({ isOpen, closeModal, mode, groupId }: GroupFormProps) => {
                                 <Label htmlFor="course">Course</Label>
                                 <Select
                                     options={courseList}
+                                    defaultValue={course}
                                     onChange={(e: any) => setCourse(e.value)}
                                 />
                             </div>

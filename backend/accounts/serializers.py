@@ -1,11 +1,12 @@
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
-from django.contrib.auth.hashers import check_password
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
-
+from django.contrib.auth.hashers import make_password
+from courses.models import Course
+from enrollments.models import Enrollment, GroupEnrollment
 from .models import User, StudentGroup
-
+from django.db import transaction
 
 # -------------------------------
 # Base User Serializer (Reusable)
@@ -16,8 +17,8 @@ class BaseUserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = "__all__"
-
+        fields = ['id','first_name','last_name','email','username','password','role','phone']
+        
     def get_avatar_url(self, obj):
         request = self.context.get("request")
         if obj.avatar and hasattr(obj.avatar, "url") and request:
@@ -41,18 +42,41 @@ class InstructorSerializer(BaseUserSerializer):
 class AdminSerializer(BaseUserSerializer):
     role=serializers.CharField(default="admin",read_only=True)
 
-# -------------------------------
-# Student Group Serializer
-# -------------------------------
+
+
+
+# ---------- Helper Serializers ----------
+class SimpleUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["id", "first_name", "last_name", "email", "phone", "role"]
+
+
+class SimpleCourseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Course
+        fields = ["id", "title", "description"]
+
+
+class StudentInputSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    first_name = serializers.CharField(required=False, allow_blank=True)
+    last_name = serializers.CharField(required=False, allow_blank=True)
+    phone = serializers.CharField(required=False, allow_blank=True)
+    password = serializers.CharField(required=False, write_only=True)
+
+
+# ---------- Main Serializer ----------
 class StudentGroupSerializer(serializers.ModelSerializer):
-    instructor = BaseUserSerializer(read_only=True)
-    students = BaseUserSerializer(many=True, read_only=True)
-    student_ids = serializers.PrimaryKeyRelatedField(
-        many=True,
-        queryset=User.objects.filter(role="student"),
-        write_only=True,
-        source="students",
+    # For write
+    students = StudentInputSerializer(many=True, write_only=True, required=False)
+    course = serializers.PrimaryKeyRelatedField(
+        queryset=Course.objects.all(), write_only=True, required=False
     )
+
+    # For read
+    students_info = SimpleUserSerializer(source="students", many=True, read_only=True)
+    courses_info = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = StudentGroup
@@ -60,25 +84,87 @@ class StudentGroupSerializer(serializers.ModelSerializer):
             "id",
             "name",
             "description",
-            "instructor",
-            "students",
-            "student_ids",
+            "students",          # write-only
+            "students_info",     # read-only
+            "course",            # write-only (for linking one course)
+            "courses_info",      # read-only (shows linked courses)
             "created_at",
         ]
+        read_only_fields = ["id", "created_at"]
 
+    # ---------- CREATE ----------
     def create(self, validated_data):
-        students = validated_data.pop("students", [])
-        group = StudentGroup.objects.create(**validated_data)
-        group.students.set(students)
+        students_data = validated_data.pop("students", [])
+        course = validated_data.pop("course", None)
+
+        with transaction.atomic():
+            group = StudentGroup.objects.create(**validated_data)
+            self._handle_students_and_course(group, students_data, course)
         return group
 
+    # ---------- UPDATE ----------
     def update(self, instance, validated_data):
-        students = validated_data.pop("students", None)
-        instance = super().update(instance, validated_data)
-        if students is not None:
-            instance.students.set(students)
+        students_data = validated_data.pop("students", None)
+        course = validated_data.pop("course", None)
+
+        with transaction.atomic():
+            # Update basic fields
+            for attr, value in validated_data.items():
+                setattr(instance, attr, value)
+            instance.save()
+
+            # If student list is provided, refresh membership
+            if students_data is not None:
+                instance.students.clear()
+                self._handle_students_and_course(instance, students_data, course)
+
+            # Add course link if provided
+            if course:
+                GroupEnrollment.objects.get_or_create(group=instance, course=course)
+
         return instance
 
+    # ---------- READ ----------
+    def get_courses_info(self, obj):
+        """Get all linked courses via GroupEnrollment"""
+        group_courses = Course.objects.filter(group_enrollments__group=obj)
+        return SimpleCourseSerializer(group_courses, many=True).data
+
+    # ---------- Shared Logic ----------
+    def _handle_students_and_course(self, group, students_data, course):
+        """Handles adding/creating students and linking to course(s)."""
+        for student_data in students_data:
+            email = student_data.get("email")
+            if not email:
+                continue
+
+            user = User.objects.filter(email=email).first()
+
+            # Skip admins/instructors
+            if user and user.role in ["admin", "instructor"]:
+                continue
+
+            # Create user if not exists
+            if not user:
+                user = User.objects.create(
+                    username=email,
+                    email=email,
+                    password=make_password(student_data.get("password", "Student@123")),
+                    first_name=student_data.get("first_name", ""),
+                    last_name=student_data.get("last_name", ""),
+                    phone=student_data.get("phone", ""),
+                    role="student",
+                )
+
+            # Add to group and enroll
+            if user.role == "student":
+                group.students.add(user)
+
+                if course:
+                    Enrollment.objects.get_or_create(student=user, course=course)
+
+        if course:
+            GroupEnrollment.objects.get_or_create(group=group, course=course)
 
 # -------------------------------
 # Registration Serializer

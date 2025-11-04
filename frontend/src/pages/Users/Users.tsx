@@ -20,9 +20,8 @@ export default function Users() {
     const columns: ColumnDef<User>[] = [
         { accessorKey: "first_name", header: "First Name" },
         { accessorKey: "last_name", header: "Last Name" },
-        { accessorKey: "username", header: "User Name" },
-        { accessorKey: "email", header: "Email" },
-        { accessorKey: "Phone", header: 'Phone' }
+        { accessorKey: "username", header: "User Name/Email" },
+        { accessorKey: "phone", header: 'Phone' }
     ];
     const [users, setUsers] = useState<User[]>([]);
     const getUsers = async () => {

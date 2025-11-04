@@ -7,19 +7,29 @@ import { useModal } from "../../hooks/useModal";
 import Button from "../ui/button/Button";
 import { Link } from "react-router";
 import { Pen, Trash } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import API from "../../api/axios";
 interface StudentGroup {
     id: number;
     name: string;
     description: string;
     created_at: string;
 }
-const StudentGroupTable = ({ groupData }: { groupData: StudentGroup[] }) => {
+const StudentGroupTable = () => {
     const { openModal, isOpen, closeModal } = useModal();
+    const [groupData, setGroupData] = useState<StudentGroup[]>([]);
+    const getGroupData = async () => {
+        // Fetch or generate data for student groups
+        const response = await API.get("/groups/")
+        const results = response.data.results;
+        setGroupData(results);
+    }
+    useEffect(() => {
+        getGroupData();
+    }, [isOpen, closeModal]);
     const [groupId, setgroupId] = useState();
     const editAction = (e: any, id: any) => {
         e.preventDefault();
-        console.log(e, id);
         setgroupId(id);
         openModal();
     }

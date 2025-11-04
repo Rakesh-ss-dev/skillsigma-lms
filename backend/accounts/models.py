@@ -2,6 +2,7 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.core.validators import FileExtensionValidator
 class User(AbstractUser):
+    email = models.EmailField(unique=True)
     ROLES = (
         ('admin', 'Admin'),
         ('instructor', 'Instructor'),
@@ -27,9 +28,7 @@ class User(AbstractUser):
 class StudentGroup(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
-    instructor = models.ForeignKey(User, on_delete=models.CASCADE, related_name="managed_groups")
     students = models.ManyToManyField(User, related_name="grouped_to", limit_choices_to={'role': 'student'})
     created_at = models.DateTimeField(auto_now_add=True)
-
     def __str__(self):
         return self.name
