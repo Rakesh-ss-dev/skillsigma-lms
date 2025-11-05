@@ -8,7 +8,7 @@ import Button from "../ui/button/Button";
 import { ColumnDef } from "@tanstack/react-table";
 import StudentsForm from "../Forms/UserForm";
 
-const StudentTable = () => {
+const InstructorTable = () => {
     interface User {
         id: number,
         first_name: string,
@@ -45,7 +45,7 @@ const StudentTable = () => {
     const [users, setUsers] = useState<User[]>([]);
     const [userId, setUserId] = useState();
     const getUsers = async () => {
-        const resp: any = await API.get('users');
+        const resp: any = await API.get('instructors/');
         setUsers(resp.data.results);
     }
     useEffect(() => {
@@ -55,9 +55,9 @@ const StudentTable = () => {
     return (
         <div className="space-y-6">
             <DataTable<User> data={users} columns={columns} />
-            <StudentsForm isOpen={isOpen} closeModal={closeModal} mode="edit" userRole='student' userId={userId} />
+            <StudentsForm isOpen={isOpen} closeModal={closeModal} mode="edit" userId={userId} userRole='instructor' />
         </div>
     )
 }
 
-export default StudentTable
+export default InstructorTable

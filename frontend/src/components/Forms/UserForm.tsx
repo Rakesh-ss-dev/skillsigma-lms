@@ -6,23 +6,23 @@ import Input from "../form/input/InputField";
 import { EyeCloseIcon, EyeIcon } from "../../icons";
 import API from "../../api/axios";
 import toast from "react-hot-toast";
-import { useNavigate } from "react-router";
 
-interface StudentsFormProps {
+interface UserFormProps {
     isOpen: boolean;
     closeModal: () => void;
     userId?: string | number;
     mode?: string;
+    userRole?: "student" | "instructor"
 }
 
-const StudentsForm = ({ isOpen, closeModal, userId }: StudentsFormProps) => {
-    const navigate = useNavigate();
+const UserForm = ({ isOpen, closeModal, userId, userRole }: UserFormProps) => {
     const [form, setForm] = useState({
         first_name: "",
         last_name: "",
         email: "",
         phone: "",
         password: "",
+        role: userRole
     });
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
     const [showPassword, setShowPassword] = useState(false);
@@ -31,9 +31,9 @@ const StudentsForm = ({ isOpen, closeModal, userId }: StudentsFormProps) => {
     // Fetch user when editing
     const fetchUser = async () => {
         try {
-            const response = await API.get(`/users/${userId}`);
-            const { first_name, last_name, email, phone } = response.data;
-            setForm({ first_name, last_name, email, phone, password: "" });
+            const response = await API.get(userRole === 'student' ? `/users/${userId}/` : `instructors/${userId}/`);
+            const { first_name, last_name, email, phone, role } = response.data;
+            setForm({ first_name, last_name, email, phone, password: "", role });
         } catch (err) {
             toast.error("Failed to fetch user details");
             console.error(err);
@@ -81,15 +81,14 @@ const StudentsForm = ({ isOpen, closeModal, userId }: StudentsFormProps) => {
         try {
             let response;
             if (!userId) {
-                response = await API.post("users/", form);
+                response = await API.post(userRole == 'student' ? "users/" : "instructors/", form);
             } else {
-                response = await API.patch(`users/${userId}/`, form);
+                response = await API.patch(userRole === 'student' ? `/users/${userId}/` : `instructors/${userId}/`, form);
             }
 
             if (response.status === 201 || response.status === 200) {
-                toast.success(userId ? "Student updated successfully" : "Student added successfully");
+                toast.success(userId ? `${userRole} updated successfully` : `${userRole} added successfully`);
                 closeModal();
-                navigate(0);
             }
         } catch (error: any) {
             console.error("Error submitting form:", error);
@@ -218,4 +217,4 @@ const StudentsForm = ({ isOpen, closeModal, userId }: StudentsFormProps) => {
     );
 };
 
-export default StudentsForm;
+export default UserForm;

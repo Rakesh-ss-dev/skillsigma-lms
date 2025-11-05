@@ -87,16 +87,28 @@ class BaseUserSerializer(serializers.ModelSerializer):
 # ====================================
 # Role-Based Serializers
 # ====================================
+
 class UserSerializer(BaseUserSerializer):
     role = serializers.CharField(default="student", read_only=True)
+    
+    def create(self, validated_data):
+        validated_data["role"] = "student"
+        return super().create(validated_data)
 
 
 class InstructorSerializer(BaseUserSerializer):
     role = serializers.CharField(default="instructor", read_only=True)
-
+    
+    def create(self, validated_data):
+        validated_data["role"] = "instructor"
+        return super().create(validated_data)
 
 class AdminSerializer(BaseUserSerializer):
     role = serializers.CharField(default="admin", read_only=True)
+    
+    def create(self, validated_data):
+        validated_data["role"] = "admin"
+        return super().create(validated_data)
 
 
 # ====================================

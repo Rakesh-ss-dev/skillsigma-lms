@@ -2,7 +2,7 @@
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import PageMeta from "../../../components/common/PageMeta";
 import { useModal } from "../../../hooks/useModal";
-import StudentsForm from "../../../components/Forms/StudentsForm";
+import StudentsForm from "../../../components/Forms/UserForm";
 import Button from "../../../components/ui/button/Button";
 import StudentTable from "../../../components/datatables/StudentTable";
 
@@ -18,7 +18,7 @@ export default function Users() {
             <PageBreadcrumb pageTitle="Learners" />
             <div className="flex align-end justify-end py-3">
                 <Button onClick={openModal}>Add Student</Button>
-                <StudentsForm isOpen={isOpen} closeModal={closeModal} mode="create" />
+                <StudentsForm isOpen={isOpen} closeModal={closeModal} mode="create" userRole="student" />
             </div>
             <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] lg:p-6">
                 <StudentTable />

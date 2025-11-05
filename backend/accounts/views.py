@@ -39,7 +39,7 @@ class UserViewSet(LoggingMixin, viewsets.ModelViewSet):
 
 class InstructorViewSet(LoggingMixin, viewsets.ModelViewSet):
     queryset = User.objects.none()
-    serializer_class = AdminSerializer
+    serializer_class = InstructorSerializer
     permission_classes = [IsAdminOrInstructor]
 
     def get_queryset(self):
