@@ -1,8 +1,8 @@
 import { useNavigate, useParams } from "react-router"
-import ComponentCard from "../../components/common/ComponentCard"
+import ComponentCard from "../../../components/common/ComponentCard"
 import { useEffect, useState } from "react";
-import API from "../../api/axios";
-import Button from "../../components/ui/button/Button";
+import API from "../../../api/axios";
+import Button from "../../../components/ui/button/Button";
 import toast from "react-hot-toast";
 import axios from "axios";
 

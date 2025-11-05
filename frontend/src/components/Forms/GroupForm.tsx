@@ -45,7 +45,6 @@ const GroupForm = ({ isOpen, closeModal, mode, groupId }: GroupFormProps) => {
         setDescription(response.data.description);
         setStudents(response.data.students_info)
         setCourse(response.data.courses_info[0].id)
-
     }
     useEffect(() => {
         if (groupId) {
@@ -130,7 +129,6 @@ const GroupForm = ({ isOpen, closeModal, mode, groupId }: GroupFormProps) => {
         }
         try {
             if (mode === "edit") {
-                // update group (if needed)
                 await API.put(`/groups/${groupId}/`, payload);
                 toast.success('Group Updated Successfully!')
             } else {

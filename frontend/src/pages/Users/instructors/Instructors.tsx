@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
-import PageBreadcrumb from "../../components/common/PageBreadCrumb";
-import PageMeta from "../../components/common/PageMeta";
 import { ColumnDef } from "@tanstack/react-table";
-import { DataTable } from "../../components/tables/Datatables/DataTable";
-import API from "../../api/axios";
+import { useEffect, useState } from "react";
+import API from "../../../api/axios";
+import PageMeta from "../../../components/common/PageMeta";
+import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
+import { DataTable } from "../../../components/tables/Datatables/DataTable";
+
 
 export default function Instructors() {
     interface Instructor {

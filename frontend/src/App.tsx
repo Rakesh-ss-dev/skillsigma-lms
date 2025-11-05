@@ -8,11 +8,10 @@ import { ScrollToTop } from "./components/common/ScrollToTop";
 import Home from "./pages/Dashboard/Home";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { Toaster } from 'react-hot-toast';
-import Users from "./pages/Users/Users"
+import Users from "./pages/Users/students/Users"
 import Courses from "./pages/Courses/Courses";
 import Enrollments from "./pages/Enrollments/Enrollments";
 import Quiz from "./pages/Quiz/Quiz";
-import InstructorProfiles from "./pages/Users/Instructors";
 import CourseForm from "./components/Forms/CourseForm";
 import DeleteCourse from "./pages/Courses/DeleteCourse";
 import ViewCourse from "./pages/Courses/ViewCourse";
@@ -23,9 +22,10 @@ import "froala-editor/css/froala_style.min.css";
 import "froala-editor/js/plugins.pkgd.min.js"; // load all plugins
 import Editor from "./components/Editor/RichTextEditor";
 import DeleteLesson from "./pages/Courses/DeleteLesson";
-import DeleteLearner from "./pages/Users/DeleteLearner";
+import DeleteLearner from "./pages/Users/students/DeleteLearner";
 import StudentGroup from "./pages/Users/groups/StudentGroup";
 import DeleteGroup from "./pages/Users/groups/DeleteGroup";
+import Instructors from "./pages/Users/instructors/Instructors";
 export default function App() {
   return (
     <>
@@ -39,7 +39,7 @@ export default function App() {
             {/* Others Page */}
             <Route path="/profile" element={<UserProfiles />} />
             <Route path="/learners" element={<Users />} />
-            <Route path="/instructors" element={<InstructorProfiles />} />
+            <Route path="/instructors" element={<Instructors />} />
             <Route path="/student-group" element={<StudentGroup />} />
             <Route path='/groups/:groupId/delete' element={<DeleteGroup />} />
             <Route path='/learners/:userId/delete' element={<DeleteLearner />} />

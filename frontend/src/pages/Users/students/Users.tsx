@@ -1,10 +1,10 @@
 
-import PageBreadcrumb from "../../components/common/PageBreadCrumb";
-import PageMeta from "../../components/common/PageMeta";
-import { useModal } from "../../hooks/useModal";
-import StudentsForm from "../../components/Forms/StudentsForm";
-import Button from "../../components/ui/button/Button";
-import StudentTable from "../../components/datatables/StudentTable";
+import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
+import PageMeta from "../../../components/common/PageMeta";
+import { useModal } from "../../../hooks/useModal";
+import StudentsForm from "../../../components/Forms/StudentsForm";
+import Button from "../../../components/ui/button/Button";
+import StudentTable from "../../../components/datatables/StudentTable";
 
 export default function Users() {
     const { isOpen, openModal, closeModal } = useModal();
