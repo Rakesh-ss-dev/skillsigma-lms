@@ -35,6 +35,7 @@ import Editor from "./components/Editor/RichTextEditor";
 import DeleteLesson from "./pages/Courses/DeleteLesson";
 import StudentGroup from "./pages/Users/StudentGroup";
 import DeleteGroup from "./pages/Users/DeleteGroup";
+import DeleteLearner from "./pages/Users/DeleteLearner";
 export default function App() {
   return (
     <>
@@ -51,6 +52,7 @@ export default function App() {
             <Route path="/instructors" element={<InstructorProfiles />} />
             <Route path="/student-group" element={<StudentGroup />} />
             <Route path='/groups/:groupId/delete' element={<DeleteGroup />} />
+            <Route path='/learners/:userId/delete' element={<DeleteLearner />} />
 
             <Route path="/courses" element={<Courses />} />
             <Route path='/add-course' element={<CourseForm />} />

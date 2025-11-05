@@ -3,10 +3,12 @@ from django.contrib.auth.password_validation import validate_password
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 from django.contrib.auth.hashers import make_password
+from django.db import transaction
+
 from courses.models import Course
 from enrollments.models import Enrollment, GroupEnrollment
 from .models import User, StudentGroup
-from django.db import transaction
+
 
 # -------------------------------
 # Base User Serializer (Reusable)
@@ -17,32 +19,85 @@ class BaseUserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id','first_name','last_name','email','username','password','role','phone']
-        
+        fields = [
+            'id', 'first_name', 'last_name', 'email',
+            'username', 'password', 'role', 'phone', 'avatar_url'
+        ]
+        extra_kwargs = {
+            'password': {'write_only': True, 'required': False, 'allow_blank': True, 'allow_null': True},
+            'username': {'required': False, 'allow_blank': True, 'allow_null': True},
+        }
+
     def get_avatar_url(self, obj):
         request = self.context.get("request")
         if obj.avatar and hasattr(obj.avatar, "url") and request:
             return request.build_absolute_uri(obj.avatar.url)
         return None
 
+    def to_internal_value(self, data):
+        # Clean up password: ignore if empty or null
+        if 'password' in data and (data['password'] in [None, '', 'null']):
+            data.pop('password')
+        return super().to_internal_value(data)
+
+    def validate(self, attrs):
+        # Require password only for new users
+        if self.instance is None and not attrs.get("password"):
+            raise serializers.ValidationError({"password": "Password is required for new users."})
+
+        # Auto-assign email as username if missing
+        email = attrs.get("email")
+        username = attrs.get("username")
+        if not username and email:
+            attrs["username"] = email
+
+        return attrs
+
+    def create(self, validated_data):
+        password = validated_data.pop("password", None)
+
+        # If username not provided, default to email
+        if not validated_data.get("username") and validated_data.get("email"):
+            validated_data["username"] = validated_data["email"]
+
+        user = User(**validated_data)
+        if password:
+            user.password = make_password(password)
+        user.save()
+        return user
+
+    def update(self, instance, validated_data):
+        password = validated_data.pop("password", None)
+
+        # Optional: if email changed, sync username with email
+        email = validated_data.get("email")
+        if email and not validated_data.get("username"):
+            validated_data["username"] = email
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        if password:
+            instance.password = make_password(password)
+
+        instance.save()
+        return instance
+
+
 
 # -------------------------------
-# Student Serializer
+# Student / Instructor / Admin
 # -------------------------------
 class UserSerializer(BaseUserSerializer):
     role = serializers.CharField(default="student", read_only=True)
 
 
-# -------------------------------
-# Instructor Serializer
-# -------------------------------
 class InstructorSerializer(BaseUserSerializer):
     role = serializers.CharField(default="instructor", read_only=True)
 
+
 class AdminSerializer(BaseUserSerializer):
-    role=serializers.CharField(default="admin",read_only=True)
-
-
+    role = serializers.CharField(default="admin", read_only=True)
 
 
 # ---------- Helper Serializers ----------
@@ -66,7 +121,7 @@ class StudentInputSerializer(serializers.Serializer):
     password = serializers.CharField(required=False, write_only=True)
 
 
-# ---------- Main Serializer ----------
+# ---------- Main Group Serializer ----------
 class StudentGroupSerializer(serializers.ModelSerializer):
     # For write
     students = StudentInputSerializer(many=True, write_only=True, required=False)
@@ -86,8 +141,8 @@ class StudentGroupSerializer(serializers.ModelSerializer):
             "description",
             "students",          # write-only
             "students_info",     # read-only
-            "course",            # write-only (for linking one course)
-            "courses_info",      # read-only (shows linked courses)
+            "course",            # write-only
+            "courses_info",      # read-only
             "created_at",
         ]
         read_only_fields = ["id", "created_at"]
@@ -113,7 +168,7 @@ class StudentGroupSerializer(serializers.ModelSerializer):
                 setattr(instance, attr, value)
             instance.save()
 
-            # If student list is provided, refresh membership
+            # Refresh group membership only if students data is given
             if students_data is not None:
                 instance.students.clear()
                 self._handle_students_and_course(instance, students_data, course)
@@ -142,7 +197,7 @@ class StudentGroupSerializer(serializers.ModelSerializer):
 
             # Skip admins/instructors
             if user and user.role in ["admin", "instructor"]:
-                continue
+                raise serializers.ValidationError(f"{email} is not a student account.")
 
             # Create user if not exists
             if not user:
@@ -166,6 +221,7 @@ class StudentGroupSerializer(serializers.ModelSerializer):
         if course:
             GroupEnrollment.objects.get_or_create(group=group, course=course)
 
+
 # -------------------------------
 # Registration Serializer
 # -------------------------------
@@ -175,6 +231,11 @@ class RegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ("id", "username", "email", "password", "role", "first_name", "last_name")
+
+    def validate_email(self, value):
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("Email already in use.")
+        return value
 
     def create(self, validated_data):
         user = User.objects.create_user(
@@ -208,7 +269,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             if user.first_name and user.last_name else None
         )
         token["avatar"] = user.avatar.url if user.avatar else None
-
         return token
 
     def validate(self, attrs):
@@ -232,7 +292,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         return data
 
 
-
 # -------------------------------
 # Change Password Serializer
 # -------------------------------
@@ -245,6 +304,12 @@ class ChangePasswordSerializer(serializers.Serializer):
         if data["new_password"] != data["confirm_password"]:
             raise serializers.ValidationError({"error": "New passwords do not match"})
         return data
+
+    def validate_old_password(self, value):
+        user = self.context["request"].user
+        if not user.check_password(value):
+            raise serializers.ValidationError("Old password is incorrect.")
+        return value
 
 
 # -------------------------------
