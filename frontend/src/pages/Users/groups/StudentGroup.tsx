@@ -1,10 +1,10 @@
+import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
+import PageMeta from "../../../components/common/PageMeta";
+import StudentGroupTable from "../../../components/datatables/StudentGroupTable";
+import GroupForm from "../../../components/Forms/GroupForm";
+import Button from "../../../components/ui/button/Button";
+import { useModal } from "../../../hooks/useModal";
 
-import PageBreadcrumb from "../../components/common/PageBreadCrumb"
-import PageMeta from "../../components/common/PageMeta"
-import StudentGroupTable from "../../components/datatables/StudentGroupTable"
-import GroupForm from "../../components/Forms/GroupForm"
-import Button from "../../components/ui/button/Button"
-import { useModal } from "../../hooks/useModal"
 interface StudentGroup {
     id: number;
     name: string;

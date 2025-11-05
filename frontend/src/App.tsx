@@ -3,16 +3,6 @@ import SignIn from "./pages/AuthPages/SignIn";
 import SignUp from "./pages/AuthPages/SignUp";
 import NotFound from "./pages/OtherPage/NotFound";
 import UserProfiles from "./pages/UserProfiles";
-import Videos from "./pages/UiElements/Videos";
-import Images from "./pages/UiElements/Images";
-import Alerts from "./pages/UiElements/Alerts";
-import Badges from "./pages/UiElements/Badges";
-import Avatars from "./pages/UiElements/Avatars";
-import Buttons from "./pages/UiElements/Buttons";
-import LineChart from "./pages/Charts/LineChart";
-import BarChart from "./pages/Charts/BarChart";
-import BasicTables from "./pages/Tables/BasicTables";
-import FormElements from "./pages/Forms/FormElements";
 import AppLayout from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 import Home from "./pages/Dashboard/Home";
@@ -33,9 +23,9 @@ import "froala-editor/css/froala_style.min.css";
 import "froala-editor/js/plugins.pkgd.min.js"; // load all plugins
 import Editor from "./components/Editor/RichTextEditor";
 import DeleteLesson from "./pages/Courses/DeleteLesson";
-import StudentGroup from "./pages/Users/StudentGroup";
-import DeleteGroup from "./pages/Users/DeleteGroup";
 import DeleteLearner from "./pages/Users/DeleteLearner";
+import StudentGroup from "./pages/Users/groups/StudentGroup";
+import DeleteGroup from "./pages/Users/groups/DeleteGroup";
 export default function App() {
   return (
     <>
@@ -65,23 +55,9 @@ export default function App() {
             } />
             <Route path="/enrollments" element={<Enrollments />} />
             <Route path='/quizes' element={<Quiz />} />
-            {/* Forms */}
-            <Route path="/form-elements" element={<FormElements />} />
 
-            {/* Tables */}
-            <Route path="/basic-tables" element={<BasicTables />} />
 
-            {/* Ui Elements */}
-            <Route path="/alerts" element={<Alerts />} />
-            <Route path="/avatars" element={<Avatars />} />
-            <Route path="/badge" element={<Badges />} />
-            <Route path="/buttons" element={<Buttons />} />
-            <Route path="/images" element={<Images />} />
-            <Route path="/videos" element={<Videos />} />
 
-            {/* Charts */}
-            <Route path="/line-chart" element={<LineChart />} />
-            <Route path="/bar-chart" element={<BarChart />} />
           </Route>
         </Route>
 

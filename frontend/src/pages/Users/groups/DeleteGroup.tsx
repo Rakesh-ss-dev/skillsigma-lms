@@ -1,10 +1,11 @@
 import { useNavigate, useParams } from "react-router";
-import ComponentCard from "../../components/common/ComponentCard"
-import API from "../../api/axios";
-import Button from "../../components/ui/button/Button";
+
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import axios from "axios";
+import ComponentCard from "../../../components/common/ComponentCard";
+import API from "../../../api/axios";
+import Button from "../../../components/ui/button/Button";
 
 
 const DeleteGroup = () => {
