@@ -58,7 +58,6 @@ const StudentGroupTable = () => {
     ];
     return (
         <div>
-            <h2>Student Group Table</h2>
             <DataTable<StudentGroup> columns={columns} data={groupData} />
             <GroupForm isOpen={isOpen} closeModal={closeModal} mode={'edit'} groupId={groupId} />
         </div>
