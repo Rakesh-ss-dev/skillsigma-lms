@@ -5,7 +5,7 @@ import formatDateTime from "../util/formateDateTime";
 import GroupForm from "../Forms/GroupForm";
 import { useModal } from "../../hooks/useModal";
 import Button from "../ui/button/Button";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { Pen, Trash } from "lucide-react";
 import { useEffect, useState } from "react";
 import API from "../../api/axios";
@@ -56,9 +56,10 @@ const StudentGroupTable = () => {
             )
         },
     ];
+    const navigate = useNavigate();
     return (
         <div>
-            <DataTable<StudentGroup> columns={columns} data={groupData} />
+            <DataTable<StudentGroup> columns={columns} data={groupData} onRowClick={(row) => { navigate(`/groups/${row.id}`) }} />
             <GroupForm isOpen={isOpen} closeModal={closeModal} mode={'edit'} groupId={groupId} />
         </div>
 

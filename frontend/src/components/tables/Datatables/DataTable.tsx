@@ -31,7 +31,6 @@ export function DataTable<T extends object>({
         defaultSort ? [{ id: defaultSort.id, desc: defaultSort.desc ?? false }] : []
     );
 
-    // 🔍 search state
     const [globalFilter, setGlobalFilter] = useState("");
 
     const table = useReactTable({
@@ -44,12 +43,7 @@ export function DataTable<T extends object>({
         getSortedRowModel: getSortedRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
         getFilteredRowModel: getFilteredRowModel(),
-        globalFilterFn: "includesString", // built-in fuzzy search
-        initialState: {
-            sorting: defaultSort
-                ? [{ id: defaultSort.id, desc: defaultSort.desc ?? false }]
-                : [],
-        },
+        globalFilterFn: "includesString",
     });
 
     return (
@@ -89,10 +83,10 @@ export function DataTable<T extends object>({
                                         header.column.columnDef.header,
                                         header.getContext()
                                     )}
-                                    {({
+                                    {{
                                         asc: " 🔼",
                                         desc: " 🔽",
-                                    }[header.column.getIsSorted() as string] ?? null)}
+                                    }[header.column.getIsSorted() as string] ?? null}
                                 </th>
                             ))}
                         </tr>
@@ -104,19 +98,17 @@ export function DataTable<T extends object>({
                         table.getRowModel().rows.map((row) => (
                             <tr
                                 key={row.id}
-                                onClick={() => onRowClick?.(row.original)}
+                                onClick={() => {
+                                    onRowClick?.(row.original);
+                                }}
                                 className="border-t text-center bg-white hover:bg-blue-50 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors cursor-pointer"
                             >
                                 {row.getVisibleCells().map((cell) => (
                                     <td
                                         key={cell.id}
                                         className="px-4 py-2 text-gray-700 dark:text-gray-300"
-                                        onClick={(e) => e.stopPropagation()}
                                     >
-                                        {flexRender(
-                                            cell.column.columnDef.cell,
-                                            cell.getContext()
-                                        )}
+                                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                     </td>
                                 ))}
                             </tr>

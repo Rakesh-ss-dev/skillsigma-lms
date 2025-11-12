@@ -39,7 +39,7 @@ const ViewCourse = () => {
                     </div>
                     <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                         <Tabs value={value} onChange={(e, newValue) => { e.preventDefault(); setValue(newValue); }}>
-                            <Tab label="Content" sx={{ fontFamily: "inherit" }} />
+                            <Tab label="Content" className="font-medium text-sm text-gray-700 dark:text-gray-300" sx={{ fontFamily: "inherit" }} />
                             <Tab label="Assessments" sx={{ fontFamily: "inherit" }} />
                         </Tabs>
                     </Box>

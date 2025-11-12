@@ -29,10 +29,7 @@ const LessonTable = ({ lessons }: { lessons: Lesson[] }) => {
     }
     const columns: ColumnDef<Lesson>[] = [
         {
-            accessorKey: "title", header: "Title", cell: ({ getValue }) => {
-                const title = getValue<string>();
-                return <a href='' className="text-blue-600 hover:text-blue-800">{title}</a>
-            }
+            accessorKey: "title", header: "Title"
         },
         {
             accessorKey: "content_file",

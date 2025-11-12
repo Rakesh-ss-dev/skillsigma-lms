@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { DataTable } from "../tables/Datatables/DataTable"
 import API from "../../api/axios";
 import { useModal } from "../../hooks/useModal";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { Pen, Trash } from "lucide-react";
 import Button from "../ui/button/Button";
 import { ColumnDef } from "@tanstack/react-table";
@@ -51,10 +51,10 @@ const StudentTable = () => {
     useEffect(() => {
         getUsers();
     }, [isOpen, closeModal])
-
+    const navigate = useNavigate();
     return (
         <div className="space-y-6">
-            <DataTable<User> data={users} columns={columns} />
+            <DataTable<User> data={users} columns={columns} onRowClick={(row) => { navigate(`/learners/${row.id}`) }} />
             <StudentsForm isOpen={isOpen} closeModal={closeModal} mode="edit" userRole='student' userId={userId} />
         </div>
     )
