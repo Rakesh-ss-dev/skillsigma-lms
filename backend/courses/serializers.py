@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from accounts.serializers import UserSerializer
 from .models import Course, Lesson, Category
-
+from accounts.models import User
 
 
 class LessonSerializer(serializers.ModelSerializer):
@@ -64,3 +64,16 @@ class CourseSerializer(serializers.ModelSerializer):
             "instructor",
             "lessons",
         ]
+class InstructorActionSerializer(serializers.Serializer):
+    """
+    Serializer for validating the 'instructor_id' for custom actions.
+    """
+    # This field does three things:
+    # 1. Checks that 'instructor_id' is in the request data.
+    # 2. Checks that it's a valid integer.
+    # 3. Checks that a User with this ID actually exists.
+    instructor_id = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(),
+        write_only=True,
+        label="Instructor ID"
+    )

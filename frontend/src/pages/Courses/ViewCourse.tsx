@@ -33,7 +33,6 @@ const ViewCourse = () => {
                             </div>
                         </div>
                         <div className="p-5 flex flex-col gap-2 justify-be">
-                            <div className="text-gray-700 dark:text-gray-300">Instructor: {course.instructor.first_name} {course.instructor.last_name}</div>
                             <div className="flex flex-row gap-2 text-gray-700 dark:text-gray-300">Categories:<span className="flex flex-row gap-2">{course.categories.map((cat: any) => <Badge key={cat.id}>{cat.name}</Badge>)}</span></div>
                         </div>
                     </div>

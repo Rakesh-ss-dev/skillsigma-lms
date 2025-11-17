@@ -8,10 +8,10 @@ class Category(models.Model):
         return self.name
     
 class Course(models.Model):
-    instructor = models.ForeignKey(User, on_delete=models.CASCADE, related_name="courses")
+    instructors = models.ManyToManyField(User, related_name="courses")
     title = models.CharField(max_length=255,unique=True)
     description = models.TextField()
-    categories = models.ManyToManyField("Category", related_name="courses")  # changed here
+    categories = models.ManyToManyField("Category", related_name="groups")  # changed here
     thumbnail = models.ImageField(upload_to="courses/", null=True, blank=True)
     is_paid = models.BooleanField(default=False)
     price = models.DecimalField(max_digits=8, decimal_places=2, default=0.00)

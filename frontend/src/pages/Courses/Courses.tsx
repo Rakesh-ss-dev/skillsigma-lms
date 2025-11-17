@@ -15,7 +15,6 @@ export default function Courses() {
         category: { id: number, name: string }[],
         thumbnail: string,
         created_at: string,
-        instructor: { first_name: string, last_name: string },
         action?: string,
     }
     const columns: ColumnDef<Course>[] = [
@@ -43,7 +42,6 @@ export default function Courses() {
                 </div>
             ),
         },
-        { accessorKey: "instructor", header: "Instructor", accessorFn: (row) => row.instructor.first_name + ' ' + row.instructor.last_name },
         { accessorKey: "created_at", header: "Created At", accessorFn: (row) => formatDateTime(row.created_at) },
         {
             accessorKey: "actions", header: "Actions", cell: ({ row }: any) => (
