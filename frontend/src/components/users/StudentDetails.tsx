@@ -32,7 +32,17 @@ const StudentDetails = ({ user }: any) => {
             toast.error("Error Enrolling Student. Please try again.");
         }
     }
-    useEffect(() => { getEnrollment(user); getCourses() }, [])
+    const removeEnrollment = async (enrollmentId: any) => {
+        try {
+            await API.delete(`/enrollments/${enrollmentId}/`)
+            toast.success("Enrollment removed successfully!");
+            getEnrollment(user);
+        } catch (error) {
+            console.error("Error removing enrollment:", error);
+            toast.error("Error removing enrollment. Please try again.");
+        }
+    }
+    useEffect(() => { getEnrollment(user); getCourses() }, [courses])
     return (
         <div>
             <Link className="text-brand-500 mb-5 flex gap-3" to="/learners"><ArrowBigLeftDash /> Back to Students List</Link>
@@ -56,10 +66,10 @@ const StudentDetails = ({ user }: any) => {
                     <ComponentCard title="Enrolled to">
                         {enrollment ?
                             <div className="flex flex-col gap-3">
-                                <p>Course Name: {enrollment.course?.title}</p>
+                                <p>Course Name:<Link className="text-brand-500 hover:text-brand-800" to={`/courses/${enrollment.course?.id}`}> {enrollment.course?.title}</Link></p>
                                 <p>Course Description: {enrollment.course?.description}</p>
                                 <p>Number of Lessons: {enrollment.course?.lessons.length}</p>
-                                <p>Course Progress : {enrollment.progress}</p>
+                                <Button onClick={() => removeEnrollment(enrollment.id)} className="self-center" size="sm">Remove Enrollement</Button>
                             </div> :
                             <div>
                                 <Select options={courses} onChange={(e: any) => setSelectedCourse(e.value)} />
