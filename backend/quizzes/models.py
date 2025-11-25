@@ -1,6 +1,6 @@
 from django.db import models
 from accounts.models import User
-from courses.models import Course
+from courses.models import Course, Lesson
 
 class Question(models.Model):
     QUESTION_TYPES = (
@@ -32,6 +32,7 @@ class Option(models.Model):
 
 class Quiz(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="quizzes")
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name="quizzes", null=True, blank=True)
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     time_limit = models.PositiveIntegerField(null=True, blank=True)  # seconds
