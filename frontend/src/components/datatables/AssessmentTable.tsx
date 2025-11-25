@@ -5,13 +5,14 @@ import Button from "../ui/button/Button";
 import { Link, useParams } from "react-router";
 import { Pen, Trash } from "lucide-react";
 import { useModal } from "../../hooks/useModal";
-
 import AssessmentBuilder from "../Forms/AssessmentBuilder";
 import { useState } from "react";
 interface Assessment {
     id: number;
     title: string;
     description: string;
+    lesson: number;
+    time_limit: number;
 }
 
 const AssessmentTable = ({ quizzes }: { quizzes: Assessment[] }) => {
@@ -26,6 +27,15 @@ const AssessmentTable = ({ quizzes }: { quizzes: Assessment[] }) => {
     const columns: ColumnDef<Assessment>[] = [
         { accessorKey: "title", header: "Title" },
         { accessorKey: "description", header: "Description" },
+        { accessorKey: "time_limit", header: "Time Limit (minutes)" },
+        {
+            accessorKey: "lesson", header: "Lesson", cell: ({ getValue }) => {
+                const lesson: any = getValue<number>();
+                return (<span>{lesson?.title}</span>
+                );
+
+            }
+        },
         {
             accessorKey: "id", header: "Actions", cell: ({ getValue }) => {
                 const id = getValue<number>();

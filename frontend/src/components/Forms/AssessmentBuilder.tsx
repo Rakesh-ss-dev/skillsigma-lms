@@ -39,7 +39,8 @@ interface Assessment {
     description: string;
     questions: Question[];
     course: number;
-
+    lesson: number;
+    time_limit: number;
 }
 
 // --- Component ---
@@ -51,21 +52,45 @@ const AssessmentForm: React.FC<AssessmentFormProps> = ({ isOpen, closeModal, mod
     const [errors, setErrors] = useState<string[]>([]);
     const [dbQuestions, setDbQuestions] = useState<Question[]>([]);
     const [selectedDbQuestionIds, setSelectedDbQuestionIds] = useState<number[]>([]);
+    const [lessons, setLessons] = useState<any[]>([]);
+    const [selectedLessonId, setSelectedLessonId] = useState<number | null>(null);
+    const [timeLimit, setTimeLimit] = useState<number | "">("");
     const options = [{ value: 'mcq', label: 'Multiple Choice' }, { value: 'tf', label: 'True / False' }, { value: 'short', label: 'Short Answer' }];
 
     const fetchExistingQuestions = async () => {
         const response = await API.get("/question/");
         setDbQuestions(response.data.results);
     };
+    const fetchLessons = async () => {
+        try {
+            const response = await API.get(`/courses/${courseId}/lessons/`);
+            const lessons = response.data.results;
+            const lessonOptions = lessons.map((lesson: any) => ({
+                value: lesson.id,
+                label: lesson.title,
+            }));
+            setLessons(lessonOptions);
+
+        } catch (err) {
+            console.error("Failed to load lessons:", err);
+        }
+    };
+
+    useEffect(() => {
+        fetchLessons();
+    }, []);
+
     useEffect(() => {
         if (mode === "edit" && assessmentId) {
             const fetchAssessment = async () => {
                 try {
                     const response = await API.get(`courses/${courseId}/quizzes/${assessmentId}/`);
-                    const { title, description, questions } = response.data;
+                    const { title, description, questions, time_limit, lesson } = response.data;
                     setTitle(title);
                     setDescription(description);
                     setQuestions(questions);
+                    setTimeLimit(time_limit);
+                    setSelectedLessonId(lesson);
                 } catch (err) {
                     console.error("Failed to load assessment:", err);
                 }
@@ -198,7 +223,7 @@ const AssessmentForm: React.FC<AssessmentFormProps> = ({ isOpen, closeModal, mod
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (!validate()) return;
-        const assessmentData: Assessment = { title, description, questions, course: Number(courseId) };
+        const assessmentData: Assessment = { title, description, questions, lesson: Number(selectedLessonId), time_limit: Number(timeLimit), course: Number(courseId) };
         try {
             if (mode === "edit") {
                 await API.put(`/courses/${courseId}/quizzes/${assessmentId}/`, assessmentData);
@@ -229,6 +254,25 @@ const AssessmentForm: React.FC<AssessmentFormProps> = ({ isOpen, closeModal, mod
                     <div>
                         <Label>Description</Label>
                         <TextArea className="border w-full p-2 rounded" rows={3} value={description} onChange={(e) => setDescription(e)} />
+                    </div>
+                    <div>
+                        <Label>Time Limit (minutes)</Label>
+                        <Input
+                            type="number"
+                            className="border w-full p-2 rounded"
+                            value={timeLimit}
+                            onChange={(e) => setTimeLimit(Number(e.target.value))}
+                        />
+                    </div>
+                    <div>
+                        <Label>Select Lesson</Label>
+                        <Select
+                            options={lessons}
+                            placeholder="Select a lesson"
+                            className="border p-2 rounded"
+                            defaultValue={selectedLessonId || ""}
+                            onChange={(e: any) => setSelectedLessonId(e.value as number)}
+                        />
                     </div>
 
                     {/* CSV Upload */}
