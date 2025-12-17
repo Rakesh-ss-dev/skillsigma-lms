@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router";
+import { Link, useParams } from "react-router";
 import Editor from "../Editor/RichTextEditor";
 import Label from "../form/Label";
 import Input from "../form/input/InputField";
@@ -81,11 +81,13 @@ function LessonForm({ isOpen, closeModal, mode, lessonId }: LessonFormProps) {
                     headers: { "Content-Type": "multipart/form-data" },
                 });
                 toast.success("Lesson Updated Successfully")
+                location.reload();
             } else {
                 await API.post(`/courses/${courseId}/lessons/`, fd, {
                     headers: { "Content-Type": "multipart/form-data" },
                 });
                 toast.success("Lesson Added Successfully");
+                location.reload();
             }
             setFormData({
                 title: "",
@@ -144,7 +146,9 @@ function LessonForm({ isOpen, closeModal, mode, lessonId }: LessonFormProps) {
                                 <Label>Content File</Label>
                                 <Input type="file" accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx" name="content_file" onChange={handleChange} />
                                 {formdata.content_file && (<div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                                    <img src={String(formdata.content_file)} alt="Content preview" width={100} className="text-blue-600 hover:text-blue-800" />
+                                    <Link to={String(formdata.content_file)} target="_blank" className="text-blue-600 hover:text-blue-800">
+                                        View Current File
+                                    </Link>
                                 </div>)}
                             </div>
 
@@ -152,7 +156,9 @@ function LessonForm({ isOpen, closeModal, mode, lessonId }: LessonFormProps) {
                                 <Label>Resources File</Label>
                                 <Input type="file" accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx" name="resources" onChange={handleChange} />
                                 {formdata.resources && (<div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                                    <img src={String(formdata.resources)} alt="Content preview" width={100} className="text-blue-600 hover:text-blue-800" />
+                                    <Link to={String(formdata.resources)} target="_blank" className="text-blue-600 hover:text-blue-800">
+                                        View Current File
+                                    </Link>
                                 </div>)}
                             </div>
 
