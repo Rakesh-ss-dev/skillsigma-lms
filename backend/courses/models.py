@@ -65,3 +65,15 @@ class Lesson(models.Model):
             if ext in ['ppt', 'pptx', 'doc', 'docx', 'xls', 'xlsx']:
                 # use on_commit to ensure DB transaction is closed before Celery tries to read
                 transaction.on_commit(lambda: convert_lesson_to_pdf.delay(self.id))
+                
+class LessonProgress(models.Model):
+    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name="lesson_progress")
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name="progress")
+    is_completed = models.BooleanField(default=False)
+    completed_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('student', 'lesson')
+
+    def __str__(self):
+        return f"{self.student.username} - {self.lesson.title}"

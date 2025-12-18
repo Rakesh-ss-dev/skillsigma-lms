@@ -44,10 +44,56 @@ class Quiz(models.Model):
 
 
 class Submission(models.Model):
+    # ... existing fields ...
     quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name="submissions")
     student = models.ForeignKey(User, on_delete=models.CASCADE, related_name="submissions")
     score = models.FloatField(default=0)
     submitted_at = models.DateTimeField(auto_now_add=True)
 
+    def calculate_score(self):
+        """
+        Iterates over all StudentAnswers linked to this submission 
+        and calculates the total score.
+        """
+        total_score = 0
+        
+        # Prefetch related data to minimize DB queries
+        answers = self.answers.select_related('question', 'selected_option').all()
+
+        for answer in answers:
+            question = answer.question
+            
+            # Logic for Auto-Grading MCQs and True/False
+            if question.question_type in ['mcq', 'tf']:
+                if answer.selected_option and answer.selected_option.is_correct:
+                    total_score += question.points
+                    answer.is_correct = True
+                else:
+                    answer.is_correct = False
+                answer.save() # Save the individual answer status
+            
+            # Logic for Short Answer (Optional: Simple exact match or manual grading)
+            # For now, we might leave short answers as False until manually graded
+            
+        self.score = total_score
+        self.save()
+    
+class StudentAnswer(models.Model):
+    submission = models.ForeignKey(Submission, on_delete=models.CASCADE, related_name="answers")
+    question = models.ForeignKey(Question, on_delete=models.CASCADE)
+    
+    # For MCQ / True/False
+    selected_option = models.ForeignKey(Option, on_delete=models.SET_NULL, null=True, blank=True)
+    
+    # For Short Answer
+    text_answer = models.TextField(blank=True, null=True)
+    
+    # Useful for manual grading of short answers later
+    is_correct = models.BooleanField(default=False) 
+    
+    class Meta:
+        # Ensures a student can't answer the same question twice in one submission
+        unique_together = ('submission', 'question')
+
     def __str__(self):
-        return f"{self.student.username} - {self.quiz.title} ({self.score})"
+        return f"Answer for {self.question} in {self.submission}"

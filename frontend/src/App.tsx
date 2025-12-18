@@ -2,43 +2,44 @@ import { Routes, Route } from "react-router";
 import "froala-editor/css/froala_editor.pkgd.min.css";
 import "froala-editor/css/froala_style.min.css";
 import "froala-editor/js/plugins.pkgd.min.js";
-import SignIn from "./pages/AuthPages/SignIn";
-import SignUp from "./pages/AuthPages/SignUp";
-import NotFound from "./pages/OtherPage/NotFound";
-import UserProfiles from "./pages/UserProfiles";
 import AppLayout from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
-import Home from "./pages/Dashboard/Home";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { Toaster } from 'react-hot-toast';
-import Users from "./pages/Users/students/Learners"
-import Courses from "./pages/Courses/Courses";
-import CourseForm from "./components/Forms/CourseForm";
-import DeleteCourse from "./pages/Courses/DeleteCourse";
-import ViewCourse from "./pages/Courses/ViewCourse";
-import DeleteAssessment from "./pages/Courses/DeleteAssessment";
-import DeleteLesson from "./pages/Courses/DeleteLesson";
-import DeleteLearner from "./pages/Users/students/DeleteLearner";
-import StudentGroup from "./pages/Users/groups/StudentGroup";
-import DeleteGroup from "./pages/Users/groups/DeleteGroup";
-import Instructors from "./pages/Users/instructors/Instructors";
-import DeleteInstructor from "./pages/Users/instructors/DeleteInstructor";
-import ViewInstructor from "./pages/Users/instructors/ViewInstructor";
-import ViewGroup from "./pages/Users/groups/ViewGroup";
-import ViewLearner from "./pages/Users/students/ViewLearner";
+
+import { lazy } from "react";
 export default function App() {
+  const SignIn = lazy(() => import('./pages/AuthPages/SignIn'));
+  const SignUp = lazy(() => import('./pages/AuthPages/SignUp'));
+  const NotFound = lazy(() => import('./pages/OtherPage/NotFound'));
+  const UserProfiles = lazy(() => import('./pages/UserProfiles'));
+  const Home = lazy(() => import('./pages/Dashboard/Home'));
+  const Users = lazy(() => import('./pages/Users/students/Learners'))
+  const Courses = lazy(() => import("./pages/Courses/Courses"));
+  const CourseForm = lazy(() => import("./components/Forms/CourseForm"));
+  const DeleteCourse = lazy(() => import("./pages/Courses/DeleteCourse"));
+  const ViewCourse = lazy(() => import("./pages/Courses/ViewCourse"));
+  const DeleteAssessment = lazy(() => import("./pages/Courses/DeleteAssessment"));
+  const DeleteLesson = lazy(() => import("./pages/Courses/DeleteLesson"));
+  const DeleteLearner = lazy(() => import("./pages/Users/students/DeleteLearner"));
+  const StudentGroup = lazy(() => import("./pages/Users/groups/StudentGroup"));
+  const DeleteGroup = lazy(() => import("./pages/Users/groups/DeleteGroup"));
+  const Instructors = lazy(() => import("./pages/Users/instructors/Instructors"));
+  const DeleteInstructor = lazy(() => import("./pages/Users/instructors/DeleteInstructor"));
+  const ViewInstructor = lazy(() => import("./pages/Users/instructors/ViewInstructor"));
+  const ViewGroup = lazy(() => import("./pages/Users/groups/ViewGroup"));
+  const ViewLearner = lazy(() => import("./pages/Users/students/ViewLearner"));
+
   return (
     <>
       <ScrollToTop />
       <Routes>
         {/* Dashboard Layout */}
         <Route element={<AppLayout />}>
-
           <Route element={<ProtectedRoute allowedRoles={["admin", "instructor"]} />}>
             <Route index path="/" element={<Home />} />
             {/* Others Page */}
             <Route path="/profile" element={<UserProfiles />} />
-
             {/*Instructor Routes */}
             <Route path="/instructors" element={<Instructors />} />
             <Route path="/instructors/:instructorId/delete" element={<DeleteInstructor />} />
@@ -62,6 +63,9 @@ export default function App() {
             <Route path='/courses/:courseId' element={<ViewCourse />} />
             <Route path='/courses/:courseId/module/:moduleId/delete' element={<DeleteLesson />} />
             <Route path='/courses/:courseId/assessment/:assessmentId/delete' element={<DeleteAssessment />} />
+          </Route>
+          <Route element={<ProtectedRoute allowedRoles={["student"]} />}>
+
           </Route>
         </Route>
 
