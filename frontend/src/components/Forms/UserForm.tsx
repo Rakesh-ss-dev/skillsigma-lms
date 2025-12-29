@@ -6,6 +6,7 @@ import Input from "../form/input/InputField";
 import { EyeCloseIcon, EyeIcon } from "../../icons";
 import API from "../../api/axios";
 import toast from "react-hot-toast";
+import { useNavigate } from "react-router";
 
 interface UserFormProps {
     isOpen: boolean;
@@ -16,6 +17,7 @@ interface UserFormProps {
 }
 
 const UserForm = ({ isOpen, closeModal, userId, userRole }: UserFormProps) => {
+    const navigate = useNavigate();
     const [form, setForm] = useState({
         first_name: "",
         last_name: "",
@@ -89,6 +91,7 @@ const UserForm = ({ isOpen, closeModal, userId, userRole }: UserFormProps) => {
             if (response.status === 201 || response.status === 200) {
                 toast.success(userId ? `${userRole} updated successfully` : `${userRole} added successfully`);
                 closeModal();
+                navigate(0); // Refresh the page
             }
         } catch (error: any) {
             console.error("Error submitting form:", error);

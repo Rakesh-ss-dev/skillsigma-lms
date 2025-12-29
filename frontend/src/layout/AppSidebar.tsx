@@ -17,7 +17,7 @@ type NavItem = {
   subItems?: { name: string; path: string; pro?: boolean; new?: boolean }[];
 };
 
-const navItems: NavItem[] = [
+let navItems: NavItem[] = [
   {
     icon: <GridIcon />,
     name: "Dashboard",
@@ -48,6 +48,21 @@ const navItems: NavItem[] = [
   },
 ];
 
+const user = JSON.parse(localStorage.getItem("user") || '{}');
+if (user.role === "instructor") {
+  console.log("Removing Instructors from sidebar for instructor role");
+  navItems = navItems.map(item => {
+    {
+      if (item.name === "Users" && item.subItems) {
+        return {
+          ...item,
+          subItems: item.subItems.filter(subItem => subItem.name !== "Instructors")
+        };
+      }
+      return item;
+    }
+  });
+}
 
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();

@@ -1,6 +1,6 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "../tables/Datatables/DataTable"
-import { Link, useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { Pen, Trash } from "lucide-react";
 import LessonForm from "../Forms/LessonForm";
 import { useModal } from "../../hooks/useModal";
@@ -16,9 +16,11 @@ interface Lesson {
     order: number,
     resources: string,
     action: string,
+    pdf_version: string,
 }
 
 const LessonTable = ({ lessons }: { lessons: Lesson[] }) => {
+    const navigate = useNavigate();
     const { courseId } = useParams();
     const { isOpen, openModal, closeModal } = useModal();
     const [selectedLessonId, setSelectedLessonId] = useState<number>(0);
@@ -32,7 +34,7 @@ const LessonTable = ({ lessons }: { lessons: Lesson[] }) => {
             accessorKey: "title", header: "Title"
         },
         {
-            accessorKey: "content_file",
+            accessorKey: "pdf_version",
             header: "Content File",
             cell: ({ getValue }) => {
                 const fileUrl = getValue<string>();
@@ -91,8 +93,8 @@ const LessonTable = ({ lessons }: { lessons: Lesson[] }) => {
                 <>
                     <div className="flex justify-center gap-3">
 
-                        <Button onClick={(e) => editAction(e, row.original.id)} className="px-3 py-2 text-sm rounded bg-primary-100 text-blue-700 flex flex-row gap-1 items-center"><Pen className="h-4" />Edit</Button>
-                        <Link to={`/courses/${courseId}/module/${row.original.id}/delete`} className="px-3 py-2 text-sm rounded bg-red-100 text-red-700 flex flex-row gap-1 items-center"><Trash className="h-4" />Delete</Link>
+                        <Button onClick={(e) => { e.stopPropagation(); editAction(e, row.original.id) }} className="px-3 py-2 text-sm rounded bg-primary-100 text-blue-700 flex flex-row gap-1 items-center"><Pen className="h-4" />Edit</Button>
+                        <Button onClick={(e) => { e.stopPropagation(); navigate(`/courses/${courseId}/module/${row.original.id}/delete`) }} className="px-3 py-2 text-sm rounded bg-red-800 hover:bg-red-500 text-red-700 flex flex-row gap-1 items-center"><Trash className="h-4" />Delete</Button>
                     </div>
 
                 </>

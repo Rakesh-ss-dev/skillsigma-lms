@@ -13,7 +13,9 @@ class LessonSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'course', 'title', 'content', 
             'content_file', 'video_url', 'order', 
-            'resources', 'created_at'
+            'resources', 'created_at',
+            'pdf_version', 
+            'processing_status'
         ]
 
     def create(self, validated_data):
@@ -33,12 +35,14 @@ class CategorySerializer(serializers.ModelSerializer):
         return category
 
 class CourseSerializer(serializers.ModelSerializer):
-    # accept instructor ID
-    instructor = UserSerializer(read_only=True)
+    instructors = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=User.objects.filter(role="instructor"),
+        required=False
+    )
 
     lessons = LessonSerializer(many=True, read_only=True)
 
-    # accept category IDs for input
     category_ids = serializers.PrimaryKeyRelatedField(
         many=True,
         queryset=Category.objects.all(),
@@ -46,7 +50,6 @@ class CourseSerializer(serializers.ModelSerializer):
         source="categories",
     )
 
-    # show category details in response
     categories = CategorySerializer(many=True, read_only=True)
 
     class Meta:
@@ -55,15 +58,20 @@ class CourseSerializer(serializers.ModelSerializer):
             "id",
             "title",
             "description",
-            "categories",     
+            "categories",
             "category_ids",
             "thumbnail",
             "is_paid",
             "price",
             "created_at",
-            "instructor",
+            "instructors",
             "lessons",
         ]
+class InstructorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email']
+        
 class InstructorActionSerializer(serializers.Serializer):
     """
     Serializer for validating the 'instructor_id' for custom actions.

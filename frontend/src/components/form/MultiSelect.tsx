@@ -167,7 +167,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
         {/* Dropdown */}
         {isOpen && !disabled && (
           <ul
-            className="absolute left-0 top-full z-40 mt-1 max-h-60 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white shadow dark:border-gray-700 dark:bg-gray-900"
+            className="absolute left-0 bg-white dark:bg-gray-900 top-full z-40 mt-1 max-h-60 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white shadow dark:border-gray-700 dark:bg-gray-900"
             role="listbox"
           >
             {options.map((option) => (

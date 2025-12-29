@@ -15,6 +15,7 @@ interface LessonFormProps {
 }
 function LessonForm({ isOpen, closeModal, mode, lessonId }: LessonFormProps) {
     const { courseId } = useParams();
+    const [isProcessing, setIsProcessing] = useState(false);
     const [formdata, setFormData] = useState({
         title: "",
         order: "",
@@ -40,7 +41,45 @@ function LessonForm({ isOpen, closeModal, mode, lessonId }: LessonFormProps) {
         e.preventDefault();
         closeModal();
     };
-
+    const checkStatus = async (id: number) => {
+        try {
+            const response = await API.get(`/courses/${courseId}/lessons/${id}/`);
+            setIsProcessing(true);
+            setTimeout(() => {
+                if (response.data.processing_status === "processing" || response.data.processing_status === "pending") {
+                    checkStatus(id);
+                }
+                else if (response.data.processing_status === "completed") {
+                    toast.success("Lesson PDF processed successfully.");
+                    setIsProcessing(false);
+                    setFormData({
+                        title: "",
+                        order: "",
+                        content: "",
+                        video_url: "",
+                        content_file: null,
+                        resources: null,
+                    });
+                    closeModal();
+                }
+                else if (response.data.processing_status === "failed") {
+                    toast.error("Lesson PDF processing failed.");
+                    setIsProcessing(false);
+                    setFormData({
+                        title: "",
+                        order: "",
+                        content: "",
+                        video_url: "",
+                        content_file: null,
+                        resources: null,
+                    });
+                    closeModal();
+                }
+            }, 2000);
+        } catch (error) {
+            toast.error("Error fetching lesson status:" + error);
+        }
+    }
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value, files } = e.target;
         if (files) {
@@ -80,24 +119,16 @@ function LessonForm({ isOpen, closeModal, mode, lessonId }: LessonFormProps) {
                 await API.patch(`/courses/${courseId}/lessons/${lessonId}/`, fd, {
                     headers: { "Content-Type": "multipart/form-data" },
                 });
+                await checkStatus(lessonId);
                 toast.success("Lesson Updated Successfully")
-                location.reload();
             } else {
-                await API.post(`/courses/${courseId}/lessons/`, fd, {
+                const response = await API.post(`/courses/${courseId}/lessons/`, fd, {
                     headers: { "Content-Type": "multipart/form-data" },
                 });
+                await checkStatus(response.data.id);
                 toast.success("Lesson Added Successfully");
-                location.reload();
             }
-            setFormData({
-                title: "",
-                order: "",
-                content: "",
-                video_url: "",
-                content_file: null,
-                resources: null,
-            });
-            closeModal();
+
         } catch (err) {
             toast.error(`Error submitting lesson:${err}`);
         }
@@ -112,6 +143,18 @@ function LessonForm({ isOpen, closeModal, mode, lessonId }: LessonFormProps) {
                     </h4>
                 </div>
                 <form className="flex flex-col" onSubmit={handleSubmit}>
+
+                    {isProcessing && <div className="px-2 py-4 text-center flex items-center justify-center fixed w-full h-full top-0 left-0 bg-gray-100/75 z-999999">
+                        <div className="flex flex-col items-center justify-center min-h-[200px]">
+                            {/* Outer Ring */}
+                            <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+
+                            {/* Loading Text */}
+                            <p className="mt-4 text-lg font-medium text-gray-600 animate-pulse">
+                                Uploading and processing files, please wait...
+                            </p>
+                        </div>
+                    </div>}
                     <div className="px-2 overflow-y-auto custom-scrollbar">
                         <div className="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
                             <div>

@@ -2,7 +2,6 @@ import { useEffect, useState } from "react"
 import ComponentCard from "../common/ComponentCard"
 import Input from "../form/input/InputField"
 import Label from "../form/Label"
-import Select from "../form/Select"
 import API from "../../api/axios"
 import TextArea from "../form/input/TextArea"
 import MultiSelect from "../form/MultiSelect"
@@ -16,9 +15,11 @@ import { useNavigate, useParams } from "react-router-dom"
 const CourseForm = () => {
     const id = useParams().courseId;
     const navigate = useNavigate();
+    const user = JSON.parse(localStorage.getItem("user") || '{}');
     const [title, setTitle] = useState('');
-    const [instructor, setInstructor] = useState('');
+    const [instructors, setInstructors] = useState<any>([]);
     const [thumbnail, setThumbnail] = useState<File | null>();
+    const [thumbnailUrl, setThumbnailUrl] = useState<string>('');
     const [thumbnailError, setThumbnailError] = useState<String | null>('');
     const [description, setDescription] = useState('');
     const [category, setCategory] = useState('');
@@ -43,7 +44,8 @@ const CourseForm = () => {
         const instructorList = instructorsResponse.data.results;
         const result = instructorList.map((item: any) => ({
             value: item.id,
-            label: item.first_name + ' ' + item.last_name,
+            text: item.first_name + ' ' + item.last_name,
+            selected: false
         }));
         setInstructorsList(result);
     }
@@ -59,6 +61,7 @@ const CourseForm = () => {
         setThumbnailError(null);
         setThumbnail(f);
     };
+
     const addCategory = async (e: any) => {
         e.preventDefault();
         const response = await API.post("categories/", { name: category });
@@ -92,11 +95,11 @@ const CourseForm = () => {
         if (id) {
             API.get(`courses/${id}/`).then((response) => {
                 const course = response.data;
-                console.log(course);
                 setTitle(course.title);
                 setDescription(course.description);
-                setInstructor(course.instructor.id);
-                setThumbnail(course.thumbnail);
+                setThumbnailUrl(course.thumbnail);
+                console.log(course.instructors);
+                setInstructors(course.instructors);
                 setSelectedCategories(course.categories.map((cat: any) => cat.id));
             });
         }
@@ -104,8 +107,8 @@ const CourseForm = () => {
     const validateForm = () => {
         const errors: any = {};
         if (!title) errors.title = "Title is required";
-        if (!instructor) errors.instructor = "Instructor is required";
-        if (!thumbnail) errors.thumbnail = "Thumbnail is required";
+        if (!instructors) errors.instructor = "At least one instructor must be selected";
+        if (!thumbnail && !thumbnailUrl) errors.thumbnail = "Thumbnail is required";
         if (!description) errors.description = "Description is required";
         if (selectedCategories.length === 0) errors.categories = "At least one category must be selected";
         setFormError(errors);
@@ -118,7 +121,7 @@ const CourseForm = () => {
             const formData = new FormData();
             formData.append("title", title);
             formData.append("description", description);
-            formData.append("instructor", instructor);
+            formData.append("instructors", instructors);
             if (thumbnail && typeof thumbnail !== 'string') {
                 formData.append("thumbnail", thumbnail as Blob);
             }
@@ -155,21 +158,19 @@ const CourseForm = () => {
     };
 
     return (
-        <ComponentCard title="Add Course" >
+        <ComponentCard title={id ? "Edit Course" : "Add Course"} >
             <form onSubmit={handleSubmit} encType="multipart/form-data">
-                <div className="w-full grid grid-cols-1 gap-6 xl:grid-cols-3">
+                <div className="grid grid-cols-2 gap-4">
                     <div>
                         <Label>Title</Label>
                         <Input type="text" value={title} onChange={e => setTitle(e.target.value)} />
                         {formError && formError.title && <p className="text-red-500 text-sm mt-1">{formError.title}</p>}
                     </div>
-                    <div>
-                        <Label>Instructor</Label>
-                        <Select options={instructorsList} defaultValue={instructor} onChange={(e: any) => {
-                            setInstructor(e)
-                        }} />
-                        {formError && formError.instructor && <p className="text-red-500 text-sm mt-1">{formError.instructor}</p>}
-                    </div>
+                    {user.role === "instructor" || (
+                        <div>
+                            <MultiSelect label="Instructors" defaultSelected={instructors} options={instructorsList} onChange={(e: any) => setInstructors(e)} />
+                            {formError && formError.instructor && <p className="text-red-500 text-sm mt-1">{formError.instructor}</p>}
+                        </div>)}
                     <div>
                         <Label>Thumbnail</Label>
                         <FileInput onChange={handleFileChange} />
@@ -177,6 +178,7 @@ const CourseForm = () => {
                         {formError && formError.thumbnail && <p className="text-red-500 text-sm mt-1">{formError.thumbnail}</p>}
                         {thumbnail && typeof thumbnail === 'string' && <img src={thumbnail} alt="Thumbnail" className="mt-2 h-20 w-20 object-cover rounded" />}
                         {thumbnail && typeof thumbnail !== 'string' && <img src={URL.createObjectURL(thumbnail)} alt="Thumbnail" className="mt-2 h-20 w-20 object-cover rounded" />}
+                        {thumbnailUrl && !thumbnail && <img src={thumbnailUrl} alt="Thumbnail" className="mt-2 h-20 w-20 object-cover rounded" />}
                     </div>
                     <div >
                         <Label>Description</Label>
@@ -197,14 +199,14 @@ const CourseForm = () => {
                         </div>
                         {formError && formError.categories && <p className="text-red-500 text-sm mt-1">{formError.categories}</p>}
                     </div>
-                    <div className="flex justify-end mt-4 md:col-span-3">
-                        <Button
-                            className="bg-brand-500 text-white disabled:opacity-50"
-                            type="submit"
-                        >
-                            Add Course
-                        </Button>
-                    </div>
+                </div>
+                <div className="flex justify-end mt-4 md:col-span-3">
+                    <Button
+                        className="bg-brand-500 text-white disabled:opacity-50"
+                        type="submit"
+                    >
+                        {id ? "Update Course" : "Create Course"}
+                    </Button>
                 </div>
             </form>
         </ComponentCard>

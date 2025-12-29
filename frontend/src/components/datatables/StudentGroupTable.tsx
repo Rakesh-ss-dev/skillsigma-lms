@@ -5,7 +5,7 @@ import formatDateTime from "../util/formateDateTime";
 import GroupForm from "../Forms/GroupForm";
 import { useModal } from "../../hooks/useModal";
 import Button from "../ui/button/Button";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { Pen, Trash } from "lucide-react";
 import { useEffect, useState } from "react";
 import API from "../../api/axios";
@@ -48,8 +48,8 @@ const StudentGroupTable = () => {
                 <>
                     <div className="flex justify-center gap-3">
 
-                        <Button onClick={(e) => editAction(e, row.original.id)} className="px-3 py-2 text-sm rounded bg-primary-100 text-blue-700 flex flex-row gap-1 items-center"><Pen className="h-4" />Edit</Button>
-                        <Link to={`/groups/${row.original.id}/delete`} className="px-3 py-2 text-sm rounded bg-red-100 text-red-700 flex flex-row gap-1 items-center"><Trash className="h-4" />Delete</Link>
+                        <Button onClick={(e) => { e.stopPropagation(); editAction(e, row.original.id) }} className="px-3 py-2 text-sm rounded bg-primary-100 text-blue-700 flex flex-row gap-1 items-center"><Pen className="h-4" />Edit</Button>
+                        <Button onClick={(e) => { e.stopPropagation(); navigate(`/groups/${row.original.id}/delete`) }} className="px-3 py-2 text-sm rounded bg-red-800 hover:bg-red-500 text-red-700 flex flex-row gap-1 items-center"><Trash className="h-4" />Delete</Button>
                     </div>
 
                 </>

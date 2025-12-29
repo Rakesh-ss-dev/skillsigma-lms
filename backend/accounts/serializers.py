@@ -3,8 +3,7 @@ from django.contrib.auth.password_validation import validate_password
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 from django.contrib.auth.hashers import make_password
-from django.db import transaction
-
+from django.db import transaction, models
 from courses.models import Course
 from enrollments.models import Enrollment, GroupEnrollment
 from .models import User, StudentGroup
@@ -79,7 +78,6 @@ class BaseUserSerializer(serializers.ModelSerializer):
 
         if password:
             instance.password = make_password(password)
-
         instance.save()
         return instance
 
@@ -91,9 +89,10 @@ class BaseUserSerializer(serializers.ModelSerializer):
 class UserSerializer(BaseUserSerializer):
     role = serializers.CharField(default="student", read_only=True)
     
-    def create(self, validated_data):
+    def create(self, validated_data, *args, **kwargs):
+        
         validated_data["role"] = "student"
-        return super().create(validated_data)
+        return super().create(validated_data, *args, **kwargs)
 
 
 class InstructorSerializer(BaseUserSerializer):
@@ -195,38 +194,80 @@ class StudentGroupSerializer(serializers.ModelSerializer):
         return instance
 
     def _handle_students_and_course(self, group, students_data, course):
-        """Handles adding/creating students and linking to course(s)."""
         for student_data in students_data:
             email = student_data.get("email")
-            if not email:
+            phone = student_data.get("phone")
+
+            if not email and not phone:
                 continue
 
-            user = User.objects.filter(email=email).first()
+            email = email.lower().strip() if email else None
+            phone = phone.strip() if phone else None
+            
+            user = None
 
+            # 1. Try to find exact match by Email first (Primary ID)
+            if email:
+                user = User.objects.filter(email=email).first()
+            
+            # 2. If no user found by email, try phone
+            if not user and phone:
+                user = User.objects.filter(phone=phone).first()
+
+            # 🔹 Skip admins & instructors to prevent privilege escalation or data corruption
             if user and user.role in ["admin", "instructor"]:
                 continue
 
-            if not user:
-                username = email
+            if user:
+                # 🔹 UPDATE existing student
+                updated = False
+                
+                # Update phone if missing or different
+                if phone and user.phone != phone:
+                    user.phone = phone
+                    updated = True
+                
+                # Update names if provided
+                if student_data.get("first_name"):
+                    user.first_name = student_data.get("first_name")
+                    updated = True
+                if student_data.get("last_name"):
+                    user.last_name = student_data.get("last_name")
+                    updated = True
+
+                # Only save if we actually changed something
+                if updated:
+                    user.save()
+
+            else:
+                # 🔹 CREATE new student
+                # Generate a random password if not provided to prevent "Student@123" exploits
+                raw_password = student_data.get("password")
+                if not raw_password:
+                    raw_password = User.objects.make_random_password() 
+
                 user = User.objects.create(
-                    username=username,
+                    username=email or phone, # Prefer email as username
                     email=email,
-                    password=make_password(student_data.get("password", "Student@123")),
+                    phone=phone,
+                    password=make_password(raw_password),
                     first_name=student_data.get("first_name", ""),
                     last_name=student_data.get("last_name", ""),
-                    phone=student_data.get("phone", ""),
                     role="student",
                 )
+                # TODO: Ideally trigger an email here sending the user their credentials
 
+            # 🔹 Attach to group
             if user.role == "student":
                 group.students.add(user)
+                
+                # 🔹 Enroll in course if provided
                 if course:
                     Enrollment.objects.get_or_create(student=user, course=course)
 
+        # 🔹 Link Group to Course
         if course:
             GroupEnrollment.objects.get_or_create(group=group, course=course)
-
-
 # ====================================
 # Registration Serializer
 # ====================================

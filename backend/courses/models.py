@@ -24,10 +24,18 @@ class Course(models.Model):
 
 
 class Lesson(models.Model):
+    STATUS_CHOICES = (
+        ('pending', 'Pending'),
+        ('processing', 'Processing'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+    )
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="lessons")
     title = models.CharField(max_length=255)
     content = models.TextField()
     content_file = models.FileField(upload_to="lessons/content_files/", null=True, blank=True)
+    pdf_version = models.FileField(upload_to="lessons/pdfs/", null=True, blank=True)
+    processing_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     video_url = models.URLField(blank=True, null=True)
     order = models.PositiveIntegerField(default=0)
     resources = models.FileField(upload_to="lessons/resources/", null=True, blank=True)
@@ -38,33 +46,30 @@ class Lesson(models.Model):
 
     def __str__(self):
         return f"{self.course.title} - {self.title}"
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Store the original file name on initialization
+        self._original_content_file = self.content_file
+
     def save(self, *args, **kwargs):
-        # We need to know if the file changed.
-        # If the instance already exists in DB, fetch the old version to compare.
         is_new_file = False
-        
         if self.pk:
-            try:
-                old_instance = Lesson.objects.get(pk=self.pk)
-                if old_instance.content_file != self.content_file:
-                    is_new_file = True
-            except Lesson.DoesNotExist:
-                pass # Should not happen if self.pk exists
+            old = Lesson.objects.get(pk=self.pk)
+            if old.content_file != self.content_file:
+                is_new_file = True
         else:
-            is_new_file = True # New record
+            is_new_file = True
 
-        # Save normally first to ensure file exists on disk/S3
-        super().save(*args, **kwargs)
-
-        # Trigger Task IF:
-        # 1. A file actually exists
-        # 2. It is a new file upload (don't re-convert on title edit)
-        # 3. It needs conversion (check extension)
+        # Set status to processing if we are about to kick off a task
         if self.content_file and is_new_file:
             ext = self.content_file.name.split('.')[-1].lower()
             if ext in ['ppt', 'pptx', 'doc', 'docx', 'xls', 'xlsx']:
-                # use on_commit to ensure DB transaction is closed before Celery tries to read
-                transaction.on_commit(lambda: convert_lesson_to_pdf.delay(self.id))
+                self.processing_status = 'processing' 
+
+        super().save(*args, **kwargs)
+
+        if self.content_file and is_new_file and self.processing_status == 'processing':
+            transaction.on_commit(lambda: convert_lesson_to_pdf.delay(self.id))
                 
 class LessonProgress(models.Model):
     student = models.ForeignKey(User, on_delete=models.CASCADE, related_name="lesson_progress")

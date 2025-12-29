@@ -5,6 +5,9 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_tracking.mixins import LoggingMixin
 from .mixins import SafeLoggingMixin
 from .models import User, StudentGroup
+from courses.models import Course
+from django.db.models import Q
+from enrollments.models import GroupEnrollment,Enrollment
 from .serializers import (
     AdminSerializer,
     UserSerializer,
@@ -23,12 +26,24 @@ from .permissions import IsAdminOrInstructor
 # -------------------------------
 class UserViewSet(LoggingMixin, viewsets.ModelViewSet):
     queryset = User.objects.none()
-    serializer_class = AdminSerializer
+    serializer_class = UserSerializer
     permission_classes = [IsAdminOrInstructor]
 
     def get_queryset(self):
+        if self.request.user.role == "instructor":
+            courses = Course.objects.filter(instructors=self.request.user)
+            enrollments = Enrollment.objects.filter(course__in=courses)
+            users = users = User.objects.filter(
+                Q(role="student", id__in=enrollments.values_list('student_id', flat=True))
+                |
+                Q(role="student", created_by=self.request.user)).distinct()
+            print(users)
+            return User.objects.filter(id__in=users) 
         return User.objects.filter(role="student")
-
+    
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+        
     def partial_update(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=True)
@@ -76,13 +91,15 @@ class StudentGroupViewSet(LoggingMixin, viewsets.ModelViewSet):
     serializer_class = StudentGroupSerializer
     permission_classes = [IsAdminOrInstructor]
 
-    def perform_create(self, serializer):
-        # Auto-assign instructor if request user is instructor
+    def get_queryset(self):
+        print(self.request.user.role)
         if self.request.user.role == "instructor":
-            serializer.save(instructor=self.request.user)
-        else:
-            serializer.save()
-
+            courses = Course.objects.filter(instructors=self.request.user)
+            group_enrollments = GroupEnrollment.objects.filter(course__in=courses)
+            return StudentGroup.objects.filter(
+                id__in=group_enrollments.values_list('group_id', flat=True)
+            ).distinct()
+        return StudentGroup.objects.all()
 
 # -------------------------------
 # User Registration View

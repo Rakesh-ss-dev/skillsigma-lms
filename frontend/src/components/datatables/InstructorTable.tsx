@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { DataTable } from "../tables/Datatables/DataTable"
 import API from "../../api/axios";
 import { useModal } from "../../hooks/useModal";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { Pen, Trash } from "lucide-react";
 import Button from "../ui/button/Button";
 import { ColumnDef } from "@tanstack/react-table";
@@ -33,8 +33,8 @@ const InstructorTable = () => {
                 <>
                     <div className="flex justify-center gap-3">
 
-                        <Button onClick={() => { editUser(row.original.id) }} className="px-3 py-2 text-sm rounded bg-primary-100 text-blue-700 flex flex-row gap-1 items-center"><Pen className="h-4" />Edit</Button>
-                        <Link to={`${row.original.id}/delete`} className="px-3 py-2 text-sm rounded bg-red-100 text-red-700 flex flex-row gap-1 items-center"><Trash className="h-4" />Delete</Link>
+                        <Button onClick={(e) => { e.stopPropagation(); editUser(row.original.id) }} className="px-3 py-2 text-sm rounded bg-primary-100 text-blue-700 flex flex-row gap-1 items-center"><Pen className="h-4" />Edit</Button>
+                        <Button onClick={(e) => { e.stopPropagation(); navigate(`/instructors/${row.original.id}/delete`) }} className="px-3 py-2 text-sm rounded bg-red-800 hover:bg-red-500 text-red-700 flex flex-row gap-1 items-center"><Trash className="h-4" />Delete</Button>
                     </div>
 
                 </>

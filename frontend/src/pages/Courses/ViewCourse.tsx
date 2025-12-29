@@ -7,6 +7,7 @@ import Box from '@mui/material/Box';
 import Assessment from "../../components/course/Assessment";
 import CourseContent from "../../components/course/CourseContent";
 import Badge from "../../components/ui/badge/Badge";
+import Button from "../../components/ui/button/Button";
 const ViewCourse = () => {
 
     const [course, setCourse] = useState<any>(null);
@@ -32,8 +33,13 @@ const ViewCourse = () => {
                                 <p className="text-gray-700 dark:text-gray-300">{course.description}</p>
                             </div>
                         </div>
-                        <div className="p-5 flex flex-col gap-2 justify-be">
+                        <div className="p-5 flex flex-col gap-2">
                             <div className="flex flex-row gap-2 text-gray-700 dark:text-gray-300">Categories:<span className="flex flex-row gap-2">{course.categories.map((cat: any) => <Badge key={cat.id}>{cat.name}</Badge>)}</span></div>
+                        </div>
+                        <div className="justify-self-end">
+                            <Button size="sm" className="m-5" onClick={() => window.location.href = `/courses/${courseId}/edit`}>
+                                View as User
+                            </Button>
                         </div>
                     </div>
                     <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>

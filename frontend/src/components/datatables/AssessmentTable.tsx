@@ -2,7 +2,7 @@
 import { DataTable } from "../tables/Datatables/DataTable";
 import { ColumnDef } from "@tanstack/react-table";
 import Button from "../ui/button/Button";
-import { Link, useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { Pen, Trash } from "lucide-react";
 import { useModal } from "../../hooks/useModal";
 import AssessmentBuilder from "../Forms/AssessmentBuilder";
@@ -16,6 +16,7 @@ interface Assessment {
 }
 
 const AssessmentTable = ({ quizzes }: { quizzes: Assessment[] }) => {
+    const navigate = useNavigate();
     const { isOpen, openModal, closeModal } = useModal();
     const [selectedAssessmentId, setSelectedAssessmentId] = useState<number>(0);
     const editAction = (e: React.MouseEvent, id: number) => {
@@ -41,8 +42,8 @@ const AssessmentTable = ({ quizzes }: { quizzes: Assessment[] }) => {
                 const id = getValue<number>();
                 return (
                     <div className="flex justify-center gap-3">
-                        <Button onClick={(e) => editAction(e, id)}><Pen className="h-4" />Edit</Button>
-                        <Link to={`/courses/${courseId}/assessment/${id}/delete`} className="px-3 py-2 text-sm rounded bg-red-100 text-red-700 flex flex-row gap-1 items-center"><Trash className="h-4" />Delete</Link>
+                        <Button onClick={(e) => { e.stopPropagation(); editAction(e, id) }}><Pen className="h-4" />Edit</Button>
+                        <Button onClick={(e) => { e.stopPropagation(); navigate(`/courses/${courseId}/assessment/${id}/delete`) }} className="px-3 py-2 text-sm rounded bg-red-800 hover:bg-red-500 text-red-700 flex flex-row gap-1 items-center"><Trash className="h-4" />Delete</Button>
                     </div>
                 );
             }

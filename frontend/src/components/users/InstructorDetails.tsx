@@ -29,7 +29,7 @@ const InstructorDetails = ({ instructor }: any) => {
     const assignCourse = async () => {
         try {
             const formdata = { instructor_id: instructor.id }
-            await API.post(`/courses/${selectedCourse}/add-instructor/`, { ...formdata });
+            await API.post(`/courses/${selectedCourse}/add_instructor/`, { ...formdata });
             toast.success("Course assigned successfully");
             getAssignedCourses();
         } catch (error) {
@@ -40,7 +40,7 @@ const InstructorDetails = ({ instructor }: any) => {
     const removeCourse = async (courseId: any) => {
         try {
             const formdata = { instructor_id: instructor.id }
-            await API.post(`/courses/${courseId}/remove-instructor/`, { ...formdata });
+            await API.post(`/courses/${courseId}/remove_instructor/`, { ...formdata });
             toast.success("Course removed successfully");
             getAssignedCourses();
         } catch (error) {
@@ -80,10 +80,10 @@ const InstructorDetails = ({ instructor }: any) => {
                                             {
                                                 assignedCourses.map((course: any) =>
                                                     <TableRow key={course.id}>
-                                                        <TableCell className="text-center">
+                                                        <TableCell className="text-center p-3">
                                                             <Link className="text-brand-500 hover:text-brand-800" to={`/courses/${course.id}`}> {course?.title}</Link>
                                                         </TableCell>
-                                                        <TableCell className="text-center">
+                                                        <TableCell className="text-center p-3">
                                                             <Button onClick={() => { removeCourse(course.id) }} size="sm">Remove </Button>
                                                         </TableCell>
                                                     </TableRow>
