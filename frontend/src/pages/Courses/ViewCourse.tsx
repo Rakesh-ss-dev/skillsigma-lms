@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import API from "../../api/axios";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
@@ -9,7 +9,7 @@ import CourseContent from "../../components/course/CourseContent";
 import Badge from "../../components/ui/badge/Badge";
 import Button from "../../components/ui/button/Button";
 const ViewCourse = () => {
-
+    const navigate = useNavigate();
     const [course, setCourse] = useState<any>(null);
     const [value, setValue] = useState(0);
     const { courseId } = useParams<{ courseId: string }>();
@@ -36,8 +36,8 @@ const ViewCourse = () => {
                         <div className="p-5 flex flex-col gap-2">
                             <div className="flex flex-row gap-2 text-gray-700 dark:text-gray-300">Categories:<span className="flex flex-row gap-2">{course.categories.map((cat: any) => <Badge key={cat.id}>{cat.name}</Badge>)}</span></div>
                         </div>
-                        <div className="justify-self-end">
-                            <Button size="sm" className="m-5" onClick={() => window.location.href = `/courses/${courseId}/edit`}>
+                        <div className="ms-auto">
+                            <Button size="sm" className="m-5" onClick={() => navigate(`/courses/${courseId}/user-view`)}>
                                 View as User
                             </Button>
                         </div>

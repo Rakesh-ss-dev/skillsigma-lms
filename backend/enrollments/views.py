@@ -27,6 +27,11 @@ class EnrollmentViewSet(LoggingMixin, viewsets.ModelViewSet):
         data = EnrollmentSerializer(enrollments, many=True).data
 
         return Response(data, status=status.HTTP_200_OK)
+    def get_queryset(self):
+        user = self.request.user
+        if getattr(user, 'role', None) == 'student':
+            return Enrollment.objects.filter(student=user)
+        return Enrollment.objects.all()
 
 class GroupEnrollmentViewSet(LoggingMixin, viewsets.ModelViewSet):
     queryset = GroupEnrollment.objects.all()

@@ -47,23 +47,51 @@ let navItems: NavItem[] = [
     ]
   },
 ];
-
+let instructorNavItems = [
+  {
+    icon: <GridIcon />,
+    name: "Dashboard",
+    path: "/"
+  },
+  {
+    icon: <SiBookstack />,
+    name: "Courses",
+    path: "/courses",
+  },
+  {
+    icon: <RiUserSettingsLine />,
+    name: "Users",
+    subItems: [
+      {
+        name: "Student Group",
+        path: '/student-group'
+      },
+      {
+        name: "Learners",
+        path: '/learners'
+      },
+    ]
+  },
+];
+let studentNavItems = [
+  {
+    icon: <GridIcon />,
+    name: "Dashboard",
+    path: "/me"
+  },
+  {
+    icon: <SiBookstack />,
+    name: "Courses",
+    path: "/me/courses",
+  },
+]
 const user = JSON.parse(localStorage.getItem("user") || '{}');
 if (user.role === "instructor") {
-  console.log("Removing Instructors from sidebar for instructor role");
-  navItems = navItems.map(item => {
-    {
-      if (item.name === "Users" && item.subItems) {
-        return {
-          ...item,
-          subItems: item.subItems.filter(subItem => subItem.name !== "Instructors")
-        };
-      }
-      return item;
-    }
-  });
+  navItems = instructorNavItems
 }
-
+if (user.role == "student") {
+  navItems = studentNavItems
+}
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const location = useLocation();

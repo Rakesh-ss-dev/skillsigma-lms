@@ -75,12 +75,9 @@ DRF_API_LOGGER_SKIP_NAMESPACE = []  # if you want to skip some apps
 CORS_ALLOW_ALL_ORIGINS = DEBUG  # allow all in dev
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",  # React dev server
-    "https://yourfrontend.com",
 ]
-
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",
-    "https://yourfrontend.com",
 ]
 
 

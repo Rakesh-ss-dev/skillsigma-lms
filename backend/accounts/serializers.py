@@ -88,19 +88,51 @@ class BaseUserSerializer(serializers.ModelSerializer):
 
 class UserSerializer(BaseUserSerializer):
     role = serializers.CharField(default="student", read_only=True)
-    
-    def create(self, validated_data, *args, **kwargs):
-        
-        validated_data["role"] = "student"
-        return super().create(validated_data, *args, **kwargs)
 
+    class Meta:
+        fields = ['id', 'email', 'username', 'password', 'role'] 
+        extra_kwargs = {'password': {'write_only': True}}
+
+    def create(self, validated_data, *args, **kwargs):
+        validated_data['role'] = 'student'
+        password = validated_data.pop('password', None)
+        instance = super().create(validated_data, *args, **kwargs)
+        if password:
+            instance.set_password(password)
+            instance.save()
+        return instance
+
+    def update(self, instance, validated_data):
+        password = validated_data.pop('password', None)
+        instance = super().update(instance, validated_data)
+        if password:
+            instance.set_password(password)
+            instance.save()
+            
+        return instance
+        
 
 class InstructorSerializer(BaseUserSerializer):
     role = serializers.CharField(default="instructor", read_only=True)
     
-    def create(self, validated_data):
+    def create(self, validated_data,*args, **kwargs):
         validated_data["role"] = "instructor"
-        return super().create(validated_data)
+        password = validated_data.pop('password', None)
+        instance = super().create(validated_data, *args, **kwargs)
+        if password:
+            instance.set_password(password)
+            instance.save()
+        return instance
+    
+    def update(self, validated_data):
+        validated_data['role']="instructor"
+        password= validated_data.pop('password', None)
+        instance = super().update(instance,validated_data)
+        if password:
+            instance.set_password(password)
+            instance.save()
+        return instance
+
 
 class AdminSerializer(BaseUserSerializer):
     role = serializers.CharField(default="admin", read_only=True)

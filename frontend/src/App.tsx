@@ -20,6 +20,7 @@ import Courses from "./pages/Courses/Courses";
 import CourseForm from "./components/Forms/CourseForm";
 import DeleteCourse from "./pages/Courses/DeleteCourse";
 import ViewCourse from "./pages/Courses/ViewCourse";
+import UserCourse from "./pages/Courses/UserCourse";
 import DeleteLesson from "./pages/Courses/DeleteLesson";
 import DeleteAssessment from "./pages/Courses/DeleteAssessment";
 import LearnersDashboard from "./pages/Learners/LearnersDashboard";
@@ -27,6 +28,7 @@ import SignIn from "./pages/AuthPages/SignIn";
 import SignUp from "./pages/AuthPages/SignUp";
 import NotFound from "./pages/OtherPage/NotFound";
 import ViewLearner from "./pages/Users/students/ViewLearner";
+import StudentCourses from "./components/course/StudentCourses";
 
 export default function App() {
   return (
@@ -35,6 +37,8 @@ export default function App() {
       <Routes>
         {/* Dashboard Layout */}
         <Route element={<AppLayout />}>
+
+
           <Route element={<ProtectedRoute allowedRoles={["admin", "instructor"]} />}>
             <Route index path="/" element={<Home />} />
             {/* Others Page */}
@@ -62,9 +66,13 @@ export default function App() {
             <Route path='/courses/:courseId' element={<ViewCourse />} />
             <Route path='/courses/:courseId/module/:moduleId/delete' element={<DeleteLesson />} />
             <Route path='/courses/:courseId/assessment/:assessmentId/delete' element={<DeleteAssessment />} />
+            <Route path="/courses/:courseId/user-view" element={<UserCourse />} />
           </Route>
+
+
           <Route element={<ProtectedRoute allowedRoles={["student"]} />}>
-            <Route index path="/" element={<LearnersDashboard />} />
+            <Route index path="/me/" element={<LearnersDashboard />} />
+            <Route index path='/me/courses' element={<StudentCourses />} />
           </Route>
         </Route>
 

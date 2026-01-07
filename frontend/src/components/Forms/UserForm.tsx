@@ -157,34 +157,30 @@ const UserForm = ({ isOpen, closeModal, userId, userRole }: UserFormProps) => {
                                     <p className="mt-1 text-sm text-red-600">{errors.email}</p>
                                 )}
                             </div>
-
-                            {!userId && (
-                                <div>
-                                    <Label>Password</Label>
-                                    <div className="relative">
-                                        <Input
-                                            type={showPassword ? "text" : "password"}
-                                            name="password"
-                                            value={form.password}
-                                            onChange={handleChange}
-                                        />
-                                        <span
-                                            onClick={() => setShowPassword(!showPassword)}
-                                            className="absolute z-30 -translate-y-1/2 cursor-pointer right-4 top-1/2"
-                                        >
-                                            {showPassword ? (
-                                                <EyeIcon className="fill-gray-500 dark:fill-gray-400 size-5" />
-                                            ) : (
-                                                <EyeCloseIcon className="fill-gray-500 dark:fill-gray-400 size-5" />
-                                            )}
-                                        </span>
-                                    </div>
-                                    {errors.password && (
-                                        <p className="mt-1 text-sm text-red-600">{errors.password}</p>
-                                    )}
+                            <div>
+                                <Label>Password</Label>
+                                <div className="relative">
+                                    <Input
+                                        type={showPassword ? "text" : "password"}
+                                        name="password"
+                                        value={form.password}
+                                        onChange={handleChange}
+                                    />
+                                    <span
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute z-30 -translate-y-1/2 cursor-pointer right-4 top-1/2"
+                                    >
+                                        {showPassword ? (
+                                            <EyeIcon className="fill-gray-500 dark:fill-gray-400 size-5" />
+                                        ) : (
+                                            <EyeCloseIcon className="fill-gray-500 dark:fill-gray-400 size-5" />
+                                        )}
+                                    </span>
                                 </div>
-                            )}
-
+                                {errors.password && (
+                                    <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+                                )}
+                            </div>
                             <div>
                                 <Label>Phone</Label>
                                 <Input

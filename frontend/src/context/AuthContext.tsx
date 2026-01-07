@@ -177,7 +177,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setUser(newUser);
             localStorage.setItem("user", JSON.stringify(newUser));
             if (newUser.role === "student") {
-                navigate(`/`);
+                navigate(`/me/`);
             }
             toast.success("Logged in");
             navigate(`/`);
