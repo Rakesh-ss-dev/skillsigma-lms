@@ -83,8 +83,8 @@ class StudentAnswer(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
     selected_option = models.ForeignKey(Option, on_delete=models.SET_NULL, null=True, blank=True)
     text_answer = models.TextField(blank=True, null=True)
-    is_correct = models.BooleanField(default=False) 
-    
+    is_correct = models.BooleanField(default=False)
+    points_awarded = models.IntegerField(default=0)
     class Meta:
         unique_together = ('submission', 'question')
 

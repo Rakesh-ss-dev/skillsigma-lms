@@ -1,7 +1,14 @@
 from rest_framework import serializers
 from .models import Course, Lesson, Category
 from accounts.models import User
+from quizzes.models import Quiz
 
+
+class CourseQuizSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Quiz
+        fields = ['id', 'title', 'description', 'prerequisite_lesson',"questions"]
+        
 class LessonSerializer(serializers.ModelSerializer):
     course = serializers.PrimaryKeyRelatedField(read_only=True)
     # New read-only helpers
@@ -42,6 +49,7 @@ class CourseSerializer(serializers.ModelSerializer):
         required=False
     )
     lessons = LessonSerializer(many=True, read_only=True)
+    quizzes = CourseQuizSerializer(many=True, read_only=True)
     category_ids = serializers.PrimaryKeyRelatedField(
         many=True,
         queryset=Category.objects.all(),
@@ -56,7 +64,7 @@ class CourseSerializer(serializers.ModelSerializer):
             "id", "title", "description", 
             "categories", "category_ids", 
             "thumbnail", "is_paid", "price", 
-            "created_at", "instructors", "lessons",
+            "created_at", "instructors", "lessons","quizzes"
         ]
 
 class InstructorActionSerializer(serializers.Serializer):
