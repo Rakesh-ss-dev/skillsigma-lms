@@ -1,5 +1,5 @@
 from django.db import models
-from accounts.models import User
+from django.conf import settings
 from courses.models import Course, Lesson
 
 class Question(models.Model):
@@ -9,7 +9,7 @@ class Question(models.Model):
         ('short', 'Short Answer'),
     )
 
-    text = models.TextField(unique=True)  # ✅ Prevents duplicate questions
+    text = models.TextField(unique=True) 
     question_type = models.CharField(max_length=20, choices=QUESTION_TYPES)
     points = models.PositiveIntegerField(default=1)
     short_answer = models.TextField(blank=True, null=True)
@@ -19,23 +19,34 @@ class Question(models.Model):
 
 
 class Option(models.Model):
-    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="options")
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="options", db_index=True)
     text = models.CharField(max_length=255)
     is_correct = models.BooleanField(default=False)
 
     class Meta:
-        unique_together = ('question', 'text')  # ✅ No duplicate options for same question
+        unique_together = ('question', 'text')
 
     def __str__(self):
         return f"{self.text} ({'Correct' if self.is_correct else 'Wrong'})"
 
 
 class Quiz(models.Model):
-    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="quizzes")
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="quizzes", db_index=True)
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name="quizzes", null=True, blank=True)
+    
+    # NEW: Prerequisite Logic
+    prerequisite_lesson = models.ForeignKey(
+        Lesson,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='unlocks_quizzes',
+        help_text="The lesson that must be marked complete to unlock this quiz."
+    )
+
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
-    time_limit = models.PositiveIntegerField(null=True, blank=True)  # seconds
+    time_limit = models.PositiveIntegerField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     questions = models.ManyToManyField(Question, related_name="quizzes", blank=True)
 
@@ -44,36 +55,25 @@ class Quiz(models.Model):
 
 
 class Submission(models.Model):
-    # ... existing fields ...
-    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name="submissions")
-    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name="submissions")
+    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name="submissions", db_index=True)
+    student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="submissions", db_index=True)
     score = models.FloatField(default=0)
     submitted_at = models.DateTimeField(auto_now_add=True)
 
     def calculate_score(self):
-        """
-        Iterates over all StudentAnswers linked to this submission 
-        and calculates the total score.
-        """
+        # Preserved your grading logic, just added select_related for speed
         total_score = 0
-        
-        # Prefetch related data to minimize DB queries
         answers = self.answers.select_related('question', 'selected_option').all()
 
         for answer in answers:
             question = answer.question
-            
-            # Logic for Auto-Grading MCQs and True/False
             if question.question_type in ['mcq', 'tf']:
                 if answer.selected_option and answer.selected_option.is_correct:
                     total_score += question.points
                     answer.is_correct = True
                 else:
                     answer.is_correct = False
-                answer.save() # Save the individual answer status
-            
-            # Logic for Short Answer (Optional: Simple exact match or manual grading)
-            # For now, we might leave short answers as False until manually graded
+                answer.save(update_fields=['is_correct'])
             
         self.score = total_score
         self.save()
@@ -81,18 +81,11 @@ class Submission(models.Model):
 class StudentAnswer(models.Model):
     submission = models.ForeignKey(Submission, on_delete=models.CASCADE, related_name="answers")
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
-    
-    # For MCQ / True/False
     selected_option = models.ForeignKey(Option, on_delete=models.SET_NULL, null=True, blank=True)
-    
-    # For Short Answer
     text_answer = models.TextField(blank=True, null=True)
-    
-    # Useful for manual grading of short answers later
     is_correct = models.BooleanField(default=False) 
     
     class Meta:
-        # Ensures a student can't answer the same question twice in one submission
         unique_together = ('submission', 'question')
 
     def __str__(self):

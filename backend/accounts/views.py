@@ -3,11 +3,17 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_tracking.mixins import LoggingMixin
+from django.db.models import Q
+
+# Import Local Mixins & Models
 from .mixins import SafeLoggingMixin
 from .models import User, StudentGroup
+from .permissions import IsAdminOrInstructor
+
+# Import External Models (Safe if apps are loaded)
 from courses.models import Course
-from django.db.models import Q
-from enrollments.models import GroupEnrollment,Enrollment
+from enrollments.models import GroupEnrollment
+
 from .serializers import (
     AdminSerializer,
     UserSerializer,
@@ -18,8 +24,6 @@ from .serializers import (
     ChangePasswordSerializer,
     LogoutSerializer,
 )
-from .permissions import IsAdminOrInstructor
-
 
 # -------------------------------
 # Student User ViewSet
@@ -30,15 +34,15 @@ class UserViewSet(LoggingMixin, viewsets.ModelViewSet):
     permission_classes = [IsAdminOrInstructor]
 
     def get_queryset(self):
+        # Optimization: Fetch students for the instructor in a single query
         if self.request.user.role == "instructor":
-            courses = Course.objects.filter(instructors=self.request.user)
-            enrollments = Enrollment.objects.filter(course__in=courses)
-            users = users = User.objects.filter(
-                Q(role="student", id__in=enrollments.values_list('student_id', flat=True))
-                |
-                Q(role="student", created_by=self.request.user)).distinct()
-            print(users)
-            return User.objects.filter(id__in=users) 
+            return User.objects.filter(
+                role="student"
+            ).filter(
+                Q(created_by=self.request.user) |
+                Q(enrollments__course__instructors=self.request.user)
+            ).distinct()
+            
         return User.objects.filter(role="student")
     
     def perform_create(self, serializer):
@@ -53,12 +57,9 @@ class UserViewSet(LoggingMixin, viewsets.ModelViewSet):
 
 
 class InstructorViewSet(LoggingMixin, viewsets.ModelViewSet):
-    queryset = User.objects.none()
+    queryset = User.objects.filter(role="instructor")
     serializer_class = InstructorSerializer
     permission_classes = [IsAdminOrInstructor]
-
-    def get_queryset(self):
-        return User.objects.filter(role="instructor")
 
     def partial_update(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -68,12 +69,9 @@ class InstructorViewSet(LoggingMixin, viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 class AdminViewSet(SafeLoggingMixin, viewsets.ModelViewSet):
-    queryset = User.objects.none()
+    queryset = User.objects.filter(role="admin")
     serializer_class = AdminSerializer
     permission_classes = [IsAdminOrInstructor]
-
-    def get_queryset(self):
-        return User.objects.filter(role="admin")
 
     def partial_update(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -87,19 +85,19 @@ class AdminViewSet(SafeLoggingMixin, viewsets.ModelViewSet):
 # Student Group ViewSet
 # -------------------------------
 class StudentGroupViewSet(LoggingMixin, viewsets.ModelViewSet):
-    queryset = StudentGroup.objects.all()
+    # Optimization: Prefetch students to avoid N+1 in serializer list view
+    queryset = StudentGroup.objects.prefetch_related('students').all()
     serializer_class = StudentGroupSerializer
     permission_classes = [IsAdminOrInstructor]
 
     def get_queryset(self):
-        print(self.request.user.role)
+        # Optimization: Use relationship filtering instead of manual lists
         if self.request.user.role == "instructor":
-            courses = Course.objects.filter(instructors=self.request.user)
-            group_enrollments = GroupEnrollment.objects.filter(course__in=courses)
             return StudentGroup.objects.filter(
-                id__in=group_enrollments.values_list('group_id', flat=True)
-            ).distinct()
-        return StudentGroup.objects.all()
+                course_enrollments__course__instructors=self.request.user
+            ).distinct().prefetch_related('students')
+            
+        return self.queryset
 
 # -------------------------------
 # User Registration View

@@ -3,11 +3,12 @@ from django.contrib.auth.password_validation import validate_password
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 from django.contrib.auth.hashers import make_password
-from django.db import transaction, models
+from django.db import transaction
+
+# Import models
+from .models import User, StudentGroup
 from courses.models import Course
 from enrollments.models import Enrollment, GroupEnrollment
-from .models import User, StudentGroup
-
 
 # ====================================
 # Base User Serializer (Reusable)
@@ -34,7 +35,7 @@ class BaseUserSerializer(serializers.ModelSerializer):
         return None
 
     def to_internal_value(self, data):
-        # Ignore empty or null passwords
+        # Ignore empty or null passwords to prevent hashing empty strings
         if 'password' in data and (data['password'] in [None, '', 'null']):
             data.pop('password')
         return super().to_internal_value(data)
@@ -90,56 +91,36 @@ class UserSerializer(BaseUserSerializer):
     role = serializers.CharField(default="student", read_only=True)
 
     class Meta:
+        model = User
         fields = ['id', 'email', 'username', 'password', 'role'] 
         extra_kwargs = {'password': {'write_only': True}}
 
     def create(self, validated_data, *args, **kwargs):
         validated_data['role'] = 'student'
-        password = validated_data.pop('password', None)
-        instance = super().create(validated_data, *args, **kwargs)
-        if password:
-            instance.set_password(password)
-            instance.save()
-        return instance
+        return super().create(validated_data, *args, **kwargs)
 
     def update(self, instance, validated_data):
-        password = validated_data.pop('password', None)
-        instance = super().update(instance, validated_data)
-        if password:
-            instance.set_password(password)
-            instance.save()
-            
-        return instance
-        
+        return super().update(instance, validated_data)
+
 
 class InstructorSerializer(BaseUserSerializer):
     role = serializers.CharField(default="instructor", read_only=True)
     
-    def create(self, validated_data,*args, **kwargs):
+    def create(self, validated_data, *args, **kwargs):
         validated_data["role"] = "instructor"
-        password = validated_data.pop('password', None)
-        instance = super().create(validated_data, *args, **kwargs)
-        if password:
-            instance.set_password(password)
-            instance.save()
-        return instance
+        return super().create(validated_data, *args, **kwargs)
     
-    def update(self, validated_data):
-        validated_data['role']="instructor"
-        password= validated_data.pop('password', None)
-        instance = super().update(instance,validated_data)
-        if password:
-            instance.set_password(password)
-            instance.save()
-        return instance
+    # CRITICAL FIX: Added 'instance' to arguments
+    def update(self, instance, validated_data):
+        return super().update(instance, validated_data)
 
 
 class AdminSerializer(BaseUserSerializer):
     role = serializers.CharField(default="admin", read_only=True)
     
-    def create(self, validated_data):
+    def create(self, validated_data, *args, **kwargs):
         validated_data["role"] = "admin"
-        return super().create(validated_data)
+        return super().create(validated_data, *args, **kwargs)
 
 
 # ====================================
@@ -195,6 +176,7 @@ class StudentGroupSerializer(serializers.ModelSerializer):
 
     def get_courses_info(self, obj):
         """Get all linked courses via GroupEnrollment"""
+        # Optimized lookup
         group_courses = Course.objects.filter(group_enrollments__group=obj)
         return SimpleCourseSerializer(group_courses, many=True).data
 
@@ -238,7 +220,7 @@ class StudentGroupSerializer(serializers.ModelSerializer):
             
             user = None
 
-            # 1. Try to find exact match by Email first (Primary ID)
+            # 1. Try to find exact match by Email
             if email:
                 user = User.objects.filter(email=email).first()
             
@@ -246,40 +228,34 @@ class StudentGroupSerializer(serializers.ModelSerializer):
             if not user and phone:
                 user = User.objects.filter(phone=phone).first()
 
-            # 🔹 Skip admins & instructors to prevent privilege escalation or data corruption
+            # Skip admins/instructors
             if user and user.role in ["admin", "instructor"]:
                 continue
 
             if user:
-                # 🔹 UPDATE existing student
+                # UPDATE existing student
                 updated = False
-                
-                # Update phone if missing or different
                 if phone and user.phone != phone:
                     user.phone = phone
                     updated = True
-                
-                # Update names if provided
                 if student_data.get("first_name"):
                     user.first_name = student_data.get("first_name")
                     updated = True
                 if student_data.get("last_name"):
                     user.last_name = student_data.get("last_name")
                     updated = True
-
-                # Only save if we actually changed something
+                
                 if updated:
                     user.save()
 
             else:
-                # 🔹 CREATE new student
-                # Generate a random password if not provided to prevent "Student@123" exploits
+                # CREATE new student
                 raw_password = student_data.get("password")
                 if not raw_password:
                     raw_password = User.objects.make_random_password() 
 
                 user = User.objects.create(
-                    username=email or phone, # Prefer email as username
+                    username=email or phone, 
                     email=email,
                     phone=phone,
                     password=make_password(raw_password),
@@ -287,19 +263,20 @@ class StudentGroupSerializer(serializers.ModelSerializer):
                     last_name=student_data.get("last_name", ""),
                     role="student",
                 )
-                # TODO: Ideally trigger an email here sending the user their credentials
 
-            # 🔹 Attach to group
+            # Attach to group
             if user.role == "student":
                 group.students.add(user)
                 
-                # 🔹 Enroll in course if provided
+                # Enroll in course
                 if course:
                     Enrollment.objects.get_or_create(student=user, course=course)
 
-        # 🔹 Link Group to Course
+        # Link Group to Course
         if course:
             GroupEnrollment.objects.get_or_create(group=group, course=course)
+
+
 # ====================================
 # Registration Serializer
 # ====================================
@@ -332,7 +309,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
-
         token["role"] = user.role
         token["username"] = user.username
         token["email"] = user.email

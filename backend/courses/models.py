@@ -1,7 +1,6 @@
-from django.db import models
-from accounts.models import User
 from django.db import models, transaction
-from .tasks import convert_lesson_to_pdf
+from django.conf import settings
+from .tasks import convert_lesson_to_pdf 
 
 class Category(models.Model):
     name = models.CharField(max_length=255)
@@ -10,10 +9,10 @@ class Category(models.Model):
         return self.name
     
 class Course(models.Model):
-    instructors = models.ManyToManyField(User, related_name="courses")
-    title = models.CharField(max_length=255,unique=True)
+    instructors = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name="courses")
+    title = models.CharField(max_length=255, unique=True)
     description = models.TextField()
-    categories = models.ManyToManyField("Category", related_name="groups")  # changed here
+    categories = models.ManyToManyField("Category", related_name="courses") 
     thumbnail = models.ImageField(upload_to="courses/", null=True, blank=True)
     is_paid = models.BooleanField(default=False)
     price = models.DecimalField(max_digits=8, decimal_places=2, default=0.00)
@@ -40,18 +39,34 @@ class Lesson(models.Model):
     order = models.PositiveIntegerField(default=0)
     resources = models.FileField(upload_to="lessons/resources/", null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    # NEW: Prerequisite Logic (String reference avoids circular imports)
+    prerequisite_quiz = models.ForeignKey(
+        'quizzes.Quiz', 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='unlocks_lessons',
+        help_text="The quiz that must be passed to unlock this lesson."
+    )
+    prerequisite_score = models.IntegerField(
+        default=50,
+        help_text="Minimum score percentage required on the prerequisite quiz."
+    )
+
     class Meta:
         ordering = ['order']
         unique_together = ('course', 'order')
 
     def __str__(self):
         return f"{self.course.title} - {self.title}"
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Store the original file name on initialization
         self._original_content_file = self.content_file
 
     def save(self, *args, **kwargs):
+        # Preserved your PDF conversion trigger logic
         is_new_file = False
         if self.pk:
             old = Lesson.objects.get(pk=self.pk)
@@ -60,7 +75,6 @@ class Lesson(models.Model):
         else:
             is_new_file = True
 
-        # Set status to processing if we are about to kick off a task
         if self.content_file and is_new_file:
             ext = self.content_file.name.split('.')[-1].lower()
             if ext in ['ppt', 'pptx', 'doc', 'docx', 'xls', 'xlsx']:
@@ -72,7 +86,7 @@ class Lesson(models.Model):
             transaction.on_commit(lambda: convert_lesson_to_pdf.delay(self.id))
                 
 class LessonProgress(models.Model):
-    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name="lesson_progress")
+    student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="lesson_progress")
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name="progress")
     is_completed = models.BooleanField(default=False)
     completed_at = models.DateTimeField(auto_now=True)

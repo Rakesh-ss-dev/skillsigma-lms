@@ -1,16 +1,27 @@
-from rest_framework import viewsets, permissions
-from .models import Enrollment, GroupEnrollment
-from .serializers import EnrollmentSerializer, GroupEnrollmentSerializer,GetUserEnrollmentSerializer
-from accounts.permissions import IsAdminOrInstructor
-from rest_framework_tracking.mixins import LoggingMixin
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework_tracking.mixins import LoggingMixin
+
+from .models import Enrollment, GroupEnrollment
+from .serializers import EnrollmentSerializer, GroupEnrollmentSerializer, GetUserEnrollmentSerializer
+from accounts.permissions import IsAdminOrInstructor
 
 class EnrollmentViewSet(LoggingMixin, viewsets.ModelViewSet):
-    queryset = Enrollment.objects.all()
+    # Optimization: Pre-load student and course data to prevent N+1 queries
+    queryset = Enrollment.objects.select_related('student', 'course').all()
     serializer_class = EnrollmentSerializer
     permission_classes = [IsAdminOrInstructor]  # Admin/Instructor only
+
+    def get_queryset(self):
+        # We use self.queryset (which has select_related) as the base
+        queryset = super().get_queryset()
+        
+        user = self.request.user
+        if getattr(user, 'role', None) == 'student':
+            return queryset.filter(student=user)
+        
+        return queryset
 
     def perform_create(self, serializer):
         # student should be explicitly assigned
@@ -22,18 +33,16 @@ class EnrollmentViewSet(LoggingMixin, viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         user_id = serializer.validated_data['user_id']
 
-        # Fetch user enrollments
-        enrollments = self.queryset.filter(student_id=user_id)
+        # Use get_queryset() to ensure we get the select_related optimization
+        enrollments = self.get_queryset().filter(student_id=user_id)
+        
+        # Serialization is now efficient (no extra DB hits for course/student details)
         data = EnrollmentSerializer(enrollments, many=True).data
 
         return Response(data, status=status.HTTP_200_OK)
-    def get_queryset(self):
-        user = self.request.user
-        if getattr(user, 'role', None) == 'student':
-            return Enrollment.objects.filter(student=user)
-        return Enrollment.objects.all()
 
 class GroupEnrollmentViewSet(LoggingMixin, viewsets.ModelViewSet):
-    queryset = GroupEnrollment.objects.all()
+    # Optimization: Pre-load group and course
+    queryset = GroupEnrollment.objects.select_related('group', 'course').all()
     serializer_class = GroupEnrollmentSerializer
     permission_classes = [IsAdminOrInstructor]  # Admin/Instructor only

@@ -1,12 +1,11 @@
 from rest_framework import serializers
-
-from accounts.serializers import UserSerializer
 from .models import Course, Lesson, Category
 from accounts.models import User
 
-
 class LessonSerializer(serializers.ModelSerializer):
     course = serializers.PrimaryKeyRelatedField(read_only=True)
+    # New read-only helpers
+    prerequisite_quiz_title = serializers.ReadOnlyField(source='prerequisite_quiz.title')
 
     class Meta:
         model = Lesson
@@ -14,11 +13,12 @@ class LessonSerializer(serializers.ModelSerializer):
             'id', 'course', 'title', 'content', 
             'content_file', 'video_url', 'order', 
             'resources', 'created_at',
-            'pdf_version', 
-            'processing_status'
+            'pdf_version', 'processing_status',
+            'prerequisite_quiz', 'prerequisite_quiz_title', 'prerequisite_score'
         ]
 
     def create(self, validated_data):
+        # Preserved context check
         course = self.context.get('course')
         if not course:
             raise serializers.ValidationError({"course": "Course context is missing."})
@@ -29,6 +29,7 @@ class CategorySerializer(serializers.ModelSerializer):
         model = Category
         fields = ["id", "name"]
     def create(self, validated_data):
+        # Preserved get_or_create logic
         category, created = Category.objects.get_or_create(
             name=validated_data.get("name")
         )
@@ -40,46 +41,26 @@ class CourseSerializer(serializers.ModelSerializer):
         queryset=User.objects.filter(role="instructor"),
         required=False
     )
-
     lessons = LessonSerializer(many=True, read_only=True)
-
     category_ids = serializers.PrimaryKeyRelatedField(
         many=True,
         queryset=Category.objects.all(),
         write_only=True,
         source="categories",
     )
-
     categories = CategorySerializer(many=True, read_only=True)
 
     class Meta:
         model = Course
         fields = [
-            "id",
-            "title",
-            "description",
-            "categories",
-            "category_ids",
-            "thumbnail",
-            "is_paid",
-            "price",
-            "created_at",
-            "instructors",
-            "lessons",
+            "id", "title", "description", 
+            "categories", "category_ids", 
+            "thumbnail", "is_paid", "price", 
+            "created_at", "instructors", "lessons",
         ]
-class InstructorSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ['id', 'username', 'email']
-        
+
 class InstructorActionSerializer(serializers.Serializer):
-    """
-    Serializer for validating the 'instructor_id' for custom actions.
-    """
-    # This field does three things:
-    # 1. Checks that 'instructor_id' is in the request data.
-    # 2. Checks that it's a valid integer.
-    # 3. Checks that a User with this ID actually exists.
+    # Preserved exactly as requested
     instructor_id = serializers.PrimaryKeyRelatedField(
         queryset=User.objects.all(),
         write_only=True,
