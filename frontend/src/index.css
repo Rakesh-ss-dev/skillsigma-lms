@@ -912,3 +912,8 @@ span.flatpickr-weekday,
     @apply bg-background text-foreground;
   }
 }
+.my-player {
+  --media-font-family: Outfit, sans-serif;
+  /* You can also adjust weights and sizes if needed */
+  --media-font-weight: 500;
+}

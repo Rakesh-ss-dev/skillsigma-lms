@@ -28,7 +28,8 @@ import SignIn from "./pages/AuthPages/SignIn";
 import SignUp from "./pages/AuthPages/SignUp";
 import NotFound from "./pages/OtherPage/NotFound";
 import ViewLearner from "./pages/Users/students/ViewLearner";
-import StudentCourses from "./components/course/StudentCourses";
+import StudentCourses from "./pages/Courses/StudentCourses";
+import StudentCourseView from "./pages/Courses/StudentCourseView"
 
 export default function App() {
   return (
@@ -73,6 +74,7 @@ export default function App() {
           <Route element={<ProtectedRoute allowedRoles={["student"]} />}>
             <Route index path="/me/" element={<LearnersDashboard />} />
             <Route index path='/me/courses' element={<StudentCourses />} />
+            <Route index path="/me/course/:courseId" element={<StudentCourseView />} />
           </Route>
         </Route>
 
