@@ -1,5 +1,6 @@
 from django.db import models, transaction
 from django.conf import settings
+from django.utils import timezone
 from .tasks import convert_lesson_to_pdf 
 
 class Category(models.Model):
@@ -87,12 +88,27 @@ class Lesson(models.Model):
                 
 class LessonProgress(models.Model):
     student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="lesson_progress")
-    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name="progress")
+    lesson = models.ForeignKey('Lesson', on_delete=models.CASCADE, related_name="progress") # Used string 'Lesson' to avoid circular import issues
+    
     is_completed = models.BooleanField(default=False)
-    completed_at = models.DateTimeField(auto_now=True)
+    # Changed to nullable so it can be empty if the lesson isn't finished yet
+    completed_at = models.DateTimeField(null=True, blank=True) 
 
     class Meta:
         unique_together = ('student', 'lesson')
+        # Optional: Add an index for faster lookups on specific students/lessons
+        indexes = [
+            models.Index(fields=['student', 'lesson']),
+        ]
+
+    def save(self, *args, **kwargs):
+        # Automate the timestamp logic
+        if self.is_completed and not self.completed_at:
+            self.completed_at = timezone.now()
+        elif not self.is_completed:
+            # Optional: Reset time if they un-complete the lesson
+            self.completed_at = None 
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.student.username} - {self.lesson.title}"

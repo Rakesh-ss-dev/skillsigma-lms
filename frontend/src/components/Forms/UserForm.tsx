@@ -181,6 +181,8 @@ const UserForm = ({ isOpen, closeModal, userId, userRole }: UserFormProps) => {
                                     <p className="mt-1 text-sm text-red-600">{errors.password}</p>
                                 )}
                             </div>
+    
+
                             <div>
                                 <Label>Phone</Label>
                                 <Input

@@ -1,7 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from accounts.views import UserViewSet, StudentGroupViewSet,InstructorViewSet,AdminViewSet
-from courses.views import CourseViewSet, LessonViewSet,CategoryViewSet
+from courses.views import CourseViewSet, LessonViewSet,CategoryViewSet,LessonProgressViewSet
 from enrollments.views import EnrollmentViewSet, GroupEnrollmentViewSet
 from quizzes.views import QuizViewSet, QuestionViewSet, OptionViewSet, SubmissionViewSet
 from certificates.views import CertificateViewSet
@@ -28,6 +28,7 @@ courses_router.register(r'quizzes', QuizViewSet, basename='course-quizzes')
 # Enrollments
 router.register(r'enrollments', EnrollmentViewSet)
 router.register(r'group-enrollments', GroupEnrollmentViewSet)
+router.register(r'progress', LessonProgressViewSet, basename='lesson-progress')
 
 # Quizzes
 router.register(r'quiz', QuizViewSet)

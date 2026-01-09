@@ -1,6 +1,6 @@
-from rest_framework import viewsets, status
-from .models import Course, Lesson, Category
-from .serializers import CourseSerializer, LessonSerializer, CategorySerializer
+from rest_framework import viewsets, status,permissions
+from .models import Course, Lesson, Category,LessonProgress
+from .serializers import CourseSerializer, LessonSerializer, CategorySerializer,LessonProgressSerializer
 from accounts.permissions import IsAdminOrInstructor
 from rest_framework_tracking.mixins import LoggingMixin
 from rest_framework.decorators import action
@@ -8,6 +8,7 @@ from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from accounts.models import User
 from quizzes.models import Submission
+from django.db.models import Prefetch
 
 class CategoryViewSet(LoggingMixin, viewsets.ModelViewSet):
     queryset = Category.objects.all()
@@ -69,32 +70,64 @@ class CourseViewSet(viewsets.ModelViewSet):
 
 
 class LessonViewSet(viewsets.ModelViewSet):
-    # FIX: Added queryset here to prevent router basename error
+    # Base queryset for Router compatibility
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
-    permission_classes = [IsAdminOrInstructor]
+    
+    # ⚠️ CHECK THIS: If students view this, 'IsAdminOrInstructor' will block them.
+    # Consider: permissions.IsAuthenticated or a custom IsEnrolled permission
+    permission_classes = [permissions.IsAuthenticated] 
 
     def get_queryset(self):
         course_id = self.kwargs.get('course_pk')
+        user = self.request.user
+        
+        # 1. Start with base queryset
         qs = Lesson.objects.all()
+
+        # 2. Filter by Course
         if course_id:
             qs = qs.filter(course_id=course_id)
-        return qs.select_related('prerequisite_quiz')
+
+        # 3. Optimize: Fetch Quiz data AND Student Progress in one go
+        # 'select_related' follows ForeignKey (Prerequisite Quiz)
+        # 'prefetch_related' follows Reverse FK (Lesson Progress)
+        qs = qs.select_related('prerequisite_quiz').order_by('order')
+
+        if user.is_authenticated:
+            qs = qs.prefetch_related(
+                Prefetch(
+                    'progress',  # Must match related_name in LessonProgress model
+                    queryset=LessonProgress.objects.filter(student=user),
+                    to_attr='user_progress' # Stores result in 'user_progress' attr
+                )
+            )
+            
+        return qs
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
         course_id = self.kwargs.get('course_pk')
         if course_id:
+            # We use filter().first() instead of get_object_or_404 here
+            # to avoid crashing list views if the course ID is slightly off, 
+            # though get_object_or_404 is also fine.
             course = get_object_or_404(Course, id=course_id)
             context['course'] = course
         return context
 
     @action(detail=True, methods=['get'])
     def check_access(self, request, pk=None, course_pk=None):
+        """
+        Check if the student meets the prerequisites for this lesson.
+        """
         lesson = self.get_object()
+        
+        # If no prerequisite, access is allowed
         if not lesson.prerequisite_quiz:
             return Response({"allowed": True})
 
+        # Check if student passed the required quiz
         passed = Submission.objects.filter(
             student=request.user,
             quiz=lesson.prerequisite_quiz,
@@ -108,3 +141,36 @@ class LessonViewSet(viewsets.ModelViewSet):
              "allowed": False, 
              "reason": f"Locked. You must pass '{lesson.prerequisite_quiz.title}' with {lesson.prerequisite_score}% score."
         }, status=status.HTTP_403_FORBIDDEN)
+        
+    def get_permissions(self):
+        """
+        Instantiates and returns the list of permissions that this view requires.
+        """
+        # 1. READ-ONLY actions: List, Retrieve (Single Lesson), and Check Access
+        # These are safe for any logged-in user (Student or Instructor)
+        if self.action in ['list', 'retrieve', 'check_access']:
+            permission_classes = [permissions.IsAuthenticated]
+        
+        # 2. WRITE actions: Create, Update, Partial Update, Delete
+        # These are restricted to Admin or Instructor only
+        else:
+            permission_classes = [IsAdminOrInstructor]
+            
+        return [permission() for permission in permission_classes]
+        
+class LessonProgressViewSet(viewsets.ModelViewSet):
+    serializer_class = LessonProgressSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        """
+        Ensure users only see their own progress.
+        """
+        return LessonProgress.objects.filter(student=self.request.user)
+
+    def perform_create(self, serializer):
+        """
+        Explicitly assign the student when saving via POST,
+        though our serializer create() method handles the heavy lifting above.
+        """
+        serializer.save(student=self.request.user)
