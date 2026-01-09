@@ -1,7 +1,3 @@
-// ==========================================
-// 1. API Response Types (Matches your JSON)
-// ==========================================
-
 export interface ApiCategory {
   id: number;
   name: string;
@@ -11,10 +7,11 @@ export interface ApiLesson {
   id: number;
   course: number;
   title: string;
-  content: string;      // Your HTML content "<p>Hello</p>"
+  content: string;
   video_url?: string;
   pdf_version?:string;
   resources?: string;
+  is_completed:boolean;
   order?: number;
 }
 
@@ -22,7 +19,8 @@ export interface ApiQuiz {
   id: number;
   title: string;
   description: string;
-  prerequisite_lesson: number | null; // Can be null based on your JSON
+  is_completed:boolean;
+  prerequisite_lesson: number | null;
 }
 
 export interface ApiCourse {
@@ -30,18 +28,15 @@ export interface ApiCourse {
   title: string;
   description: string;
   thumbnail: string;
+  progress:number;
   price: string;
   is_paid: boolean;
   created_at: string;
   categories: ApiCategory[];
   instructors: number[];
-  lessons: ApiLesson[];    // Separate Array
-  quizzes: ApiQuiz[];      // Separate Array
+  lessons: ApiLesson[];    
+  quizzes: ApiQuiz[]; 
 }
-
-// ==========================================
-// 2. UI Component Types (What the Player uses)
-// ==========================================
 
 export interface ContentItem {
   id: number;
@@ -54,7 +49,6 @@ export interface ContentItem {
   video_url?: string;
   content?: string; // HTML content
   resources?: string;
-  
   // Quiz specific
   quizId?: number; 
   description?: string;
@@ -64,15 +58,14 @@ export interface ContentItem {
   _prereq?: number | null;
 }
 
-// This is the Type your State should use
 export interface UIState {
   courseId: number;
   title: string;
   progress: number;
-  curriculum: ContentItem[]; // Merged list
+  curriculum: ContentItem[];
 }
 
-// 1. Basic Building Blocks
+
 export interface Option {
     id: number;
     text: string;
@@ -90,47 +83,42 @@ export interface Question {
     options: Option[];
 }
 
-// 2. Helper for the nested Lesson object
 export interface LessonSummary {
     id: number;
     title: string;
 }
 
-// 3. The Main Quiz Interface (GET /api/quiz/:id/)
 export interface Quiz {
     id: number;
     title: string;
     description: string;
-    course: number; // Course ID
-    lesson: LessonSummary | null; // Can be null if not linked to a specific module
-    prerequisite_lesson: number | null; // ID of the prerequisite
+    course: number; 
+    lesson: LessonSummary | null;
+    prerequisite_lesson: number | null;
     prerequisite_lesson_title?: string;
-    time_limit: number; // in minutes
+    time_limit: number;
+    is_completed:boolean;
     questions: Question[];
 }
 
-// 4. Submission Payload (POST /api/submissions/)
-// This is what the Frontend sends to the Backend
 export interface SubmissionPayload {
     quiz: number;
     answers: StudentAnswerSubmission[];
 }
 
 export interface StudentAnswerSubmission {
-    question: number; // Question ID
-    selected_option: number | null; // Option ID (null for short answer)
-    text_answer: string; // Empty string if MCQ
+    question: number;
+    selected_option: number | null;
+    text_answer: string;
 }
 
-// 5. Submission Result (Response from POST)
-// This is what the Backend sends back after grading
 export interface SubmissionResult {
     id: number;
     quiz: number;
     student: number;
     score: number;
-    submitted_at: string; // ISO Date string
-    answers: StudentAnswerResult[]; // Includes correctness info
+    submitted_at: string;
+    answers: StudentAnswerResult[];
 }
 
 export interface StudentAnswerResult {
@@ -141,8 +129,8 @@ export interface StudentAnswerResult {
     is_correct: boolean;
 }
 export interface AnswerEntry {
-    selected_option: number | null; // The ID of the option selected (for MCQ/TF)
-    text_answer: string | null;     // The typed text (for Short Answer)
+    selected_option: number | null;
+    text_answer: string | null;
 }
 export interface QuizAnswerState {
     [questionId: number]: AnswerEntry;

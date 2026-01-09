@@ -56,7 +56,7 @@ export const CurriculumSidebar: React.FC<SidebarProps> = ({
                                         </p>
                                         <div className="flex items-center text-xs text-gray-500 space-x-2">
                                             <span className={`px-1.5 py-0.5 rounded ${item.type === 'quiz' ? 'bg-orange-100 text-orange-700' : 'bg-blue-50 text-blue-700'}`}>
-                                                {item.type === 'quiz' ? 'Quiz' : 'Video'}
+                                                {item.type === 'quiz' ? 'Quiz' : 'Learning'}
                                             </span>
                                         </div>
                                     </div>

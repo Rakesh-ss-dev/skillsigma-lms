@@ -26,16 +26,23 @@ export default function CoursePlayer() {
             try {
                 // 1. GET Raw Data (ApiCourse format)
                 const res = await API.get(`/courses/${courseId}/`);
-
                 // 2. TRANSFORM to UI Data (UIState format)
                 const uiData = mapApiToUI(res.data);
-                console.log(uiData);
                 // 3. SET State
                 setCourseData(uiData);
-
                 // 4. Set Initial Active Item (Safe check)
                 if (uiData.curriculum && uiData.curriculum.length > 0) {
-                    setActiveItem(uiData.curriculum[0]);
+
+                    // Find the first item where 'completed' is false
+                    const firstUnfinishedItem = uiData.curriculum.find(item => !item.completed);
+
+                    if (firstUnfinishedItem) {
+                        setActiveItem(firstUnfinishedItem);
+                    } else {
+                        // Edge Case: If ALL items are completed (find returns undefined)
+                        // You usually want to default to the first item for review
+                        setActiveItem(uiData.curriculum[0]);
+                    }
                 }
             } catch (error) {
                 console.error("Failed to load course", error);
@@ -51,18 +58,20 @@ export default function CoursePlayer() {
         if (window.innerWidth < 1024) setSidebarOpen(false);
     };
 
-    const handleCompletion = (itemId: number) => {
+    const handleCompletion = async (itemId: number) => {
         if (!courseData) return;
 
         const currentIndex = courseData.curriculum.findIndex(i => i.id === itemId);
-
-        // Update curriculum lock/complete status
+        const nextItem: ContentItem = courseData.curriculum[currentIndex + 1];
+        // console.log(courseData.curriculum[currentIndex])
+        const response = await API.post('/progress/', { lesson: courseData.curriculum[currentIndex].id })
+        console.log(response);
         const updatedCurriculum = courseData.curriculum.map((item, index) => {
             if (index === currentIndex) return { ...item, completed: true };
             if (index === currentIndex + 1) return { ...item, locked: false };
             return item;
         });
-
+        setActiveItem(nextItem);
         const completedCount = updatedCurriculum.filter(i => i.completed).length;
         const newProgress = Math.round((completedCount / updatedCurriculum.length) * 100);
 

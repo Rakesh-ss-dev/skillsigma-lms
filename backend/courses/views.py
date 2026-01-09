@@ -7,8 +7,10 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from accounts.models import User
+from enrollments.models import Enrollment
 from quizzes.models import Submission
 from django.db.models import Prefetch
+
 
 class CategoryViewSet(LoggingMixin, viewsets.ModelViewSet):
     queryset = Category.objects.all()
@@ -55,6 +57,11 @@ class CourseViewSet(viewsets.ModelViewSet):
                     'quizzes__submissions', 
                     queryset=Submission.objects.filter(student=user),
                     to_attr='user_submissions'
+                ),
+                Prefetch(
+                'enrollments',
+                queryset=Enrollment.objects.filter(student=user),
+                to_attr='current_user_enrollment'
                 )
             )
 

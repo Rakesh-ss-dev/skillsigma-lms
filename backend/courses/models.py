@@ -92,7 +92,7 @@ class LessonProgress(models.Model):
     
     is_completed = models.BooleanField(default=False)
     # Changed to nullable so it can be empty if the lesson isn't finished yet
-    completed_at = models.DateTimeField(null=True, blank=True) 
+    completed_at = models.DateTimeField(auto_now_add=True) 
 
     class Meta:
         unique_together = ('student', 'lesson')

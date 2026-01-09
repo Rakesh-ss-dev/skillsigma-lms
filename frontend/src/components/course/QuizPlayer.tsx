@@ -132,7 +132,7 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ quizId, onClose }) => {
         );
     }
 
-    if (status === 'finished' && result) {
+    if (quiz?.is_completed || status === 'finished' && result) {
         return (
             <div className="max-w-xl mx-auto bg-white shadow-xl rounded-2xl overflow-hidden mt-10 text-center p-8">
                 <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">

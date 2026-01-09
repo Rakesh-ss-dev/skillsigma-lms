@@ -1,7 +1,14 @@
+import API from '../../api/axios';
 import { ApiCourse, UIState, ContentItem } from './types';
+const getProgress = async(id:number)=>{
+  const response= await API.get('/enrollments');
+  const results=response.data.results;
+  const currentCourse = results.find((res:any)=>res.course.id==id)
+  return currentCourse.progress;
+}
 
 export const mapApiToUI = (apiData: ApiCourse): UIState => {
-  
+   
   // 1. Convert Lessons to ContentItems
   const lessonItems: ContentItem[] = apiData.lessons.map(l => ({
     id: l.id, 
@@ -10,7 +17,7 @@ export const mapApiToUI = (apiData: ApiCourse): UIState => {
     content: l.content, // HTML
     video_url: l.video_url,
     pdf_version:l.pdf_version,
-    completed: false, 
+    completed: l.is_completed, 
     locked: false, 
     resources: l.resources,
     _order: l.order || 0
@@ -23,7 +30,7 @@ export const mapApiToUI = (apiData: ApiCourse): UIState => {
     type: 'quiz',
     title: q.title,
     description: q.description,
-    completed: false,
+    completed:q.is_completed,
     locked: true,     // Quizzes locked by default
     _prereq: q.prerequisite_lesson
   }));
@@ -49,13 +56,20 @@ export const mapApiToUI = (apiData: ApiCourse): UIState => {
 
   // 6. Calculate initial locking (Unlock only the first item)
   finalStructure.forEach((item, index) => {
-    item.locked = index > 0; 
+    
+    if( index>=1 )
+    {
+    item.locked = (!finalStructure[index-1].completed) && index > 0; 
+    }
+    else{
+      item.locked=index>0;
+    }
   });
-
+  getProgress(apiData.id);
   return {
     courseId: apiData.id,
     title: apiData.title,
-    progress: 0,
-    curriculum: finalStructure // This is what the component needs
+    progress: apiData.progress,
+    curriculum: finalStructure
   };
 };
