@@ -69,13 +69,13 @@ class QuizSerializer(serializers.ModelSerializer):
     # This links the QuestionSerializer so questions appear in the JSON
     questions = QuestionSerializer(many=True)
     prerequisite_lesson_title = serializers.ReadOnlyField(source='prerequisite_lesson.title')
-
+    is_completed = serializers.BooleanField(source='is_completed_annotation', read_only=True, default=False)
     class Meta:
         model = Quiz
         fields = [
             'id', 'course', 'lesson', 'title', 'description', 'time_limit', 
             'prerequisite_lesson', 'prerequisite_lesson_title',
-            'questions'
+            'questions','is_completed'
         ]
 
     # Note: get_queryset() was removed from here. It belongs in views.py.

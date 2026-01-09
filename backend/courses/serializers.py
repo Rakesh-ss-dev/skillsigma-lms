@@ -1,13 +1,28 @@
 from rest_framework import serializers
 from .models import Course, Lesson, Category,LessonProgress
 from accounts.models import User
-from quizzes.models import Quiz
+from quizzes.models import Quiz,Submission
 from django.db.models import Prefetch
 
 class CourseQuizSerializer(serializers.ModelSerializer):
+    # Changed to MethodField to calculate status dynamically
+    is_completed = serializers.SerializerMethodField()
+    
     class Meta:
         model = Quiz
-        fields = ['id', 'title', 'description', 'prerequisite_lesson',"questions"]
+        fields = ['id', 'title', 'description', 'prerequisite_lesson', "questions", "is_completed"]
+
+    def get_is_completed(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            # 1. OPTIMIZED: Check if data was prefetched in the View (Best for lists)
+            if hasattr(obj, 'user_submissions'):
+                # Check the list in memory
+                return any(s.student_id == request.user.id for s in obj.user_submissions)
+            
+            # 2. FALLBACK: Query the DB directly (Slower, but works for single retrievals)
+            return Submission.objects.filter(student=request.user, quiz=obj).exists()
+        return False
         
 class LessonSerializer(serializers.ModelSerializer):
     course = serializers.PrimaryKeyRelatedField(read_only=True)
@@ -46,15 +61,6 @@ class LessonSerializer(serializers.ModelSerializer):
             return obj.progress.filter(student=request.user, is_completed=True).exists()
         return False
     
-    def get_queryset(self):
-        user = self.request.user
-        return Lesson.objects.filter(course_id=self.kwargs['course_pk']).prefetch_related(
-            Prefetch(
-                'progress',
-                queryset=LessonProgress.objects.filter(student=user),
-                to_attr='user_progress' # Stores the result in a temporary attribute
-            )
-        )
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:

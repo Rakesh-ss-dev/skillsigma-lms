@@ -2,7 +2,7 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework_tracking.mixins import LoggingMixin
-
+from django.db.models import Exists, OuterRef
 from .models import Quiz, Question, Option, Submission
 from .serializers import QuizSerializer, QuestionSerializer, OptionSerializer, SubmissionSerializer
 from courses.models import LessonProgress
@@ -14,15 +14,21 @@ class QuizViewSet(LoggingMixin, viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        # 1. Start with an optimized base query
         queryset = Quiz.objects.select_related('lesson', 'prerequisite_lesson') \
-                               .prefetch_related('questions', 'questions__options')
+                               .prefetch_related('questions')
 
-        # 2. Check for nested route parameter (e.g. /courses/9/quizzes/)
+        # OPTIMIZATION: Check for submission in the main SQL query
+        if self.request.user.is_authenticated:
+            queryset = queryset.annotate(
+                is_completed_annotation=Exists(
+                    Submission.objects.filter(
+                        quiz=OuterRef('pk'),
+                        student=self.request.user
+                    )
+                )
+            )
+
         course_pk = self.kwargs.get('course_pk')
-        
-        # 3. CRITICAL FIX: Only filter by course IF course_pk is present.
-        # This allows direct access via /api/quiz/10/ to work.
         if course_pk:
             queryset = queryset.filter(course_id=course_pk)
             

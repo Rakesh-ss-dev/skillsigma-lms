@@ -23,8 +23,12 @@ class CourseViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        if self.request.user.role == "instructor":
-            queryset = queryset.filter(instructors=self.request.user)
+        user = self.request.user
+
+        # --- 1. Your Existing Filtering Logic ---
+        # (Added is_authenticated check to prevent errors if an anonymous user hits this endpoint)
+        if user.is_authenticated and getattr(user, 'role', None) == "instructor":
+            queryset = queryset.filter(instructors=user)
 
         instructor_id = self.request.query_params.get("instructor_id")
         if instructor_id:
@@ -32,6 +36,28 @@ class CourseViewSet(viewsets.ModelViewSet):
                 queryset = queryset.filter(instructors__id=int(instructor_id))
             except ValueError:
                 pass 
+
+        # --- 2. New Optimization Logic ---
+        # Always prefetch the course structure (lessons and quizzes)
+        queryset = queryset.prefetch_related('lessons', 'quizzes')
+
+        # Only prefetch progress/submissions if the user is logged in
+        if user.is_authenticated:
+            queryset = queryset.prefetch_related(
+                # Optimize Lesson Progress
+                Prefetch(
+                    'lessons__progress',
+                    queryset=LessonProgress.objects.filter(student=user),
+                    to_attr='user_progress'
+                ),
+                # Optimize Quiz Submissions
+                Prefetch(
+                    'quizzes__submissions', 
+                    queryset=Submission.objects.filter(student=user),
+                    to_attr='user_submissions'
+                )
+            )
+
         return queryset.distinct()
 
     def perform_create(self, serializer):
