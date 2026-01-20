@@ -29,8 +29,52 @@ import NotFound from "./pages/OtherPage/NotFound";
 import ViewLearner from "./pages/Users/students/ViewLearner";
 import StudentCourses from "./pages/Courses/StudentCourses";
 import StudentCourseView from "./pages/Courses/StudentCourseView"
+import { useEffect } from "react";
 
 export default function App() {
+  useEffect(() => {
+    const interval = setInterval(() => {
+      (function () {
+        debugger;
+      }());
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+  useEffect(() => {
+    const handleContextMenu = (e: MouseEvent) => {
+      e.preventDefault();
+    };
+
+    // 2. Disable common DevTools shortcuts
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Disable F12
+      if (e.key === 'F12') {
+        e.preventDefault();
+      }
+      // Disable Ctrl+Shift+I (Inspect)
+      if (e.ctrlKey && e.shiftKey && e.key === 'I') {
+        e.preventDefault();
+      }
+      // Disable Ctrl+Shift+J (Console)
+      if (e.ctrlKey && e.shiftKey && e.key === 'J') {
+        e.preventDefault();
+      }
+      // Disable Ctrl+U (View Source)
+      if (e.ctrlKey && e.key === 'u') {
+        e.preventDefault();
+      }
+    };
+
+    document.addEventListener('contextmenu', handleContextMenu);
+    document.addEventListener('keydown', handleKeyDown);
+
+    // Cleanup listeners when component unmounts
+    return () => {
+      document.removeEventListener('contextmenu', handleContextMenu);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
   return (
     <>
       <ScrollToTop />

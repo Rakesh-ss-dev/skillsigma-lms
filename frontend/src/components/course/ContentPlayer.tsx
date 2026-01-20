@@ -62,8 +62,8 @@ export const ContentPlayer: React.FC<ContentPlayerProps> = ({ lesson, onComplete
                     <button
                         onClick={() => setActiveTab('video')}
                         className={`flex items-center gap-2 px-6 py-3 text-sm font-medium transition-colors ${activeTab === 'video'
-                                ? 'border-b-2 border-blue-600 text-blue-600 bg-white'
-                                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                            ? 'border-b-2 border-blue-600 text-blue-600 bg-white'
+                            : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
                             }`}
                     >
                         <Play size={16} /> Video Lesson
@@ -71,8 +71,8 @@ export const ContentPlayer: React.FC<ContentPlayerProps> = ({ lesson, onComplete
                     <button
                         onClick={() => setActiveTab('pdf')}
                         className={`flex items-center gap-2 px-6 py-3 text-sm font-medium transition-colors ${activeTab === 'pdf'
-                                ? 'border-b-2 border-blue-600 text-blue-600 bg-white'
-                                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                            ? 'border-b-2 border-blue-600 text-blue-600 bg-white'
+                            : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
                             }`}
                     >
                         <FileText size={16} /> PDF Reference
@@ -84,7 +84,7 @@ export const ContentPlayer: React.FC<ContentPlayerProps> = ({ lesson, onComplete
             {renderMedia()}
 
             {/* --- CONTENT INFO AREA --- */}
-            <div className="p-6 md:p-8 flex-1 overflow-y-auto">
+            <div className="p-6 md:p-8 flex-1">
                 <h1 className="text-2xl font-bold mb-6 text-gray-900">{lesson.title}</h1>
 
                 <div className="flex flex-wrap items-center gap-4 mb-8">
@@ -92,8 +92,8 @@ export const ContentPlayer: React.FC<ContentPlayerProps> = ({ lesson, onComplete
                         onClick={onComplete}
                         disabled={lesson.completed}
                         className={`px-6 py-2.5 rounded font-semibold transition-all shadow-sm ${lesson.completed
-                                ? 'bg-green-100 text-green-700 cursor-default border border-green-200'
-                                : 'bg-gray-900 text-white hover:bg-gray-800 hover:shadow-md'
+                            ? 'bg-green-100 text-green-700 cursor-default border border-green-200'
+                            : 'bg-gray-900 text-white hover:bg-gray-800 hover:shadow-md'
                             }`}
                     >
                         {lesson.completed ? '✓ Completed' : 'Mark as Complete'}

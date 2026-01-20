@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, Trophy, ArrowLeft } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router';
 import API from '../../api/axios';
 
@@ -14,33 +14,29 @@ import { ProgressBar } from '../../components/course/ProgressBar';
 import QuizPlayer from '../../components/course/QuizPlayer';
 
 export default function CoursePlayer() {
-    // 1. STATE: Use UIState, NOT ApiCourse
     const [courseData, setCourseData] = useState<UIState | null>(null);
     const [activeItem, setActiveItem] = useState<ContentItem | null>(null);
     const [sidebarOpen, setSidebarOpen] = useState(true);
+    const [isFinished, setIsFinished] = useState(false);
+
     const navigate = useNavigate();
     const { courseId } = useParams();
 
     useEffect(() => {
         async function fetchData() {
             try {
-                // 1. GET Raw Data (ApiCourse format)
                 const res = await API.get(`/courses/${courseId}/`);
-                // 2. TRANSFORM to UI Data (UIState format)
                 const uiData = mapApiToUI(res.data);
-                // 3. SET State
                 setCourseData(uiData);
-                // 4. Set Initial Active Item (Safe check)
+
                 if (uiData.curriculum && uiData.curriculum.length > 0) {
-
-                    // Find the first item where 'completed' is false
+                    // Start where the user left off
                     const firstUnfinishedItem = uiData.curriculum.find(item => !item.completed);
-
                     if (firstUnfinishedItem) {
                         setActiveItem(firstUnfinishedItem);
                     } else {
-                        // Edge Case: If ALL items are completed (find returns undefined)
-                        // You usually want to default to the first item for review
+                        // If everything is done, show the finish screen immediately or default to first item
+                        setIsFinished(true);
                         setActiveItem(uiData.curriculum[0]);
                     }
                 }
@@ -52,8 +48,8 @@ export default function CoursePlayer() {
         if (courseId) fetchData();
     }, [courseId]);
 
-
     const handleItemClick = (item: ContentItem) => {
+        setIsFinished(false); // If they click a specific item, hide completion screen
         setActiveItem(item);
         if (window.innerWidth < 1024) setSidebarOpen(false);
     };
@@ -62,17 +58,16 @@ export default function CoursePlayer() {
         if (!courseData) return;
 
         const currentIndex = courseData.curriculum.findIndex(i => i.id === itemId);
-        const nextItem: ContentItem = courseData.curriculum[currentIndex + 1];
+        const isLastItem = currentIndex === courseData.curriculum.length - 1;
 
-        const response = await API.post('/progress/', { lesson: courseData.curriculum[currentIndex].id })
-        console.log(response);
+        // 1. Calculate updated curriculum state
         const updatedCurriculum = courseData.curriculum.map((item, index) => {
-            if (index === currentIndex) return { ...item, completed: true };
+            if (item.id === itemId) return { ...item, completed: true };
             if (index === currentIndex + 1) return { ...item, locked: false };
-            if (index === courseData.curriculum.length - 1) return item;
             return item;
         });
-        setActiveItem(nextItem);
+
+        // 2. Update Progress Percentage
         const completedCount = updatedCurriculum.filter(i => i.completed).length;
         const newProgress = Math.round((completedCount / updatedCurriculum.length) * 100);
 
@@ -81,67 +76,128 @@ export default function CoursePlayer() {
             progress: newProgress,
             curriculum: updatedCurriculum
         });
+
+        // 3. Handle Navigation or Finish
+        if (isLastItem) {
+            setIsFinished(true);
+        } else {
+            setActiveItem(updatedCurriculum[currentIndex + 1]);
+        }
+
+        // Optional: Update progress in backend
+        try {
+            await API.post(`/courses/${courseId}/progress/`, {
+                item_id: itemId,
+                completed: true
+            });
+        } catch (e) {
+            console.error("Failed to sync progress", e);
+        }
     };
 
     // --- Loading Guard ---
     if (!courseData || !activeItem) {
         return (
-            <div className="flex h-screen items-center justify-center bg-gray-100">
+            <div className="flex h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
                 <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
-                    <p className="text-gray-600">Loading course content...</p>
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p className="text-gray-600 dark:text-gray-400">Loading course content...</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="flex flex-1 overflow-hidden relative">
-            <main className={`flex-1 flex flex-col h-full transition-all duration-300 ease-in-out bg-black ${sidebarOpen ? 'lg:mr-96' : ''}`}>
-                <header className="h-16 bg-gray-900 text-white flex items-center justify-between p-4 lg:p-6 w-full z-40 shadow-lg">
+        <div className="flex h-screen w-full bg-white dark:bg-gray-950 overflow-hidden">
+
+            {/* MAIN CONTENT AREA */}
+            <main className={`flex-1 flex flex-col h-full transition-all duration-300 ease-in-out relative ${sidebarOpen ? 'lg:mr-90' : ''}`}>
+
+                {/* HEADER */}
+                <header className="h-16 bg-gray-900 text-white flex items-center justify-between px-4 lg:px-6  z-30 shadow-md">
                     <div className="flex items-center min-w-0 gap-3">
+                        <button
+                            onClick={() => navigate('/me')}
+                            className="p-2 hover:bg-gray-800 rounded-full transition-colors"
+                            title="Back to Dashboard"
+                        >
+                            <ArrowLeft size={20} />
+                        </button>
+                        <h1 className="font-bold text-lg truncate max-w-[200px] md:max-w-md">
+                            {courseData.title}
+                        </h1>
+                    </div>
+
+                    <div className="flex items-center gap-6">
+                        <div className="hidden md:flex flex-col w-32 lg:w-48">
+                            <div className="flex justify-between text-[10px] uppercase tracking-wider text-gray-400 mb-1 font-bold">
+                                <span>Progress</span>
+                                <span>{courseData.progress}%</span>
+                            </div>
+                            <ProgressBar progress={courseData.progress} />
+                        </div>
                         <button
                             onClick={() => setSidebarOpen(!sidebarOpen)}
                             className="hover:bg-gray-800 p-2 rounded-lg transition-colors lg:hidden"
                         >
                             {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
                         </button>
-                        <h1 className="font-bold text-lg truncate pr-4 max-w-[200px] md:max-w-md">
-                            {courseData.title}
-                        </h1>
-                    </div>
-
-                    <div className="flex items-center space-x-6 flex-shrink-0">
-                        <div className="hidden md:flex flex-col w-40">
-                            <div className="flex justify-between text-xs text-gray-400 mb-1.5 font-medium">
-                                <span>Your Progress</span>
-                                <span>{courseData.progress}%</span>
-                            </div>
-                            <ProgressBar progress={courseData.progress} />
-                        </div>
                     </div>
                 </header>
-                {activeItem.type === 'lesson' ? (
-                    <>
-                        <ContentPlayer
-                            lesson={{
-                                ...activeItem,
-                                // Correctly map the HTML content to description for the player
-                                description: activeItem.content || ""
-                            }}
-                            onComplete={() => handleCompletion(activeItem.id)}
-                        />
-                    </>
-                ) : (
-                    <div className="py-6 px-4 sm:px-6 lg:px-8">
-                        <QuizPlayer
-                            quizId={Number(activeItem.quizId)}
-                            onClose={() => navigate('/courses')}
-                        />
-                    </div>
-                )}
+
+                {/* CONTENT BOX */}
+                <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
+                    {isFinished ? (
+                        /* COMPLETION MESSAGE */
+                        <div className="flex flex-col items-center justify-center min-h-full p-6 text-center">
+                            <div className="w-20 h-20 bg-yellow-100 dark:bg-yellow-500/10 text-yellow-600 rounded-full flex items-center justify-center mb-6 animate-bounce shadow-lg">
+                                <Trophy size={40} />
+                            </div>
+                            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Congratulations!</h2>
+                            <p className="text-gray-600 dark:text-gray-400 mb-8 max-w-sm">
+                                You have successfully completed <strong>{courseData.title}</strong>.
+                                Great job on reaching the finish line!
+                            </p>
+                            <div className="flex flex-col sm:flex-row gap-4">
+                                <button
+                                    onClick={() => navigate('/me')}
+                                    className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all shadow-md active:scale-95"
+                                >
+                                    Back to My Courses
+                                </button>
+                                <button
+                                    onClick={() => setIsFinished(false)}
+                                    className="px-8 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 rounded-xl font-bold hover:bg-gray-100 dark:hover:bg-gray-700 transition-all"
+                                >
+                                    Review Lessons
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        /* PLAYER VIEW */
+                        <div className="h-full flex flex-col">
+                            {activeItem.type === 'lesson' ? (
+                                <ContentPlayer
+                                    lesson={{
+                                        ...activeItem,
+                                        description: activeItem.content || ""
+                                    }}
+                                    onComplete={() => handleCompletion(activeItem.id)}
+                                />
+                            ) : (
+                                <div className="py-6 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto w-full">
+                                    <QuizPlayer
+                                        quizId={Number(activeItem.quizId)}
+                                        onClose={() => handleCompletion(activeItem.id)}
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
             </main>
 
+            {/* RIGHT SIDEBAR */}
             <CurriculumSidebar
                 items={courseData.curriculum}
                 activeItem={activeItem}

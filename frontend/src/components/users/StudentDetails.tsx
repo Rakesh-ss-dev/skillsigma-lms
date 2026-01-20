@@ -152,19 +152,21 @@ const StudentDetails = ({ user }: any) => {
                         </ComponentCard>
                     )}
 
-                    <ComponentCard title="Enroll to New Courses" className="mt-5">
-                        <MultiSelect
-                            label="Select Courses"
-                            defaultSelected={selectedEnrollments}
-                            options={availableCourses}
-                            onChange={(val: any) => setSelectedEnrollments(val)}
-                        />
-                        <div className="flex justify-end mt-4">
-                            <Button onClick={enrollStudent} disabled={selectedEnrollments.length === 0}>
-                                Enroll Now
-                            </Button>
-                        </div>
-                    </ComponentCard >
+                    {courses.length > 0 && availableCourses.length > 0 &&
+                        <ComponentCard title="Enroll to New Courses" className="mt-5">
+                            <MultiSelect
+                                label="Select Courses"
+                                defaultSelected={selectedEnrollments}
+                                options={availableCourses}
+                                onChange={(val: any) => setSelectedEnrollments(val)}
+                            />
+                            <div className="flex justify-end mt-4">
+                                <Button onClick={enrollStudent} disabled={selectedEnrollments.length === 0}>
+                                    Enroll Now
+                                </Button>
+                            </div>
+                        </ComponentCard >
+                    }
                 </div>
             </div>
         </div>

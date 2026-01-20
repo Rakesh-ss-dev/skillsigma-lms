@@ -17,6 +17,8 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ quizId, onClose }) => {
     const [timeLeft, setTimeLeft] = useState<number>(0);
     const [result, setResult] = useState<SubmissionResult | null>(null);
     const [errorMsg, setErrorMsg] = useState<string>('');
+    const [strikes, setStrikes] = useState(0);
+    const maxStrikes = 2;
 
     useEffect(() => {
         const fetchQuiz = async () => {
@@ -33,6 +35,40 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ quizId, onClose }) => {
         };
         fetchQuiz();
     }, [quizId]);
+
+    useEffect(() => {
+        const handleVisibilityChange = () => {
+            if (document.hidden) {
+                triggerViolation();
+            }
+        };
+
+        const handleWindowBlur = () => {
+            triggerViolation();
+        };
+
+        const triggerViolation = () => {
+            setStrikes((prev) => {
+                const newStrikes = prev + 1;
+
+                if (newStrikes >= maxStrikes) {
+                    alert("Final Warning: You have switched tabs too many times. The quiz is being auto-submitted.");
+                    handleSubmit(); // Trigger your existing submit function
+                } else {
+                    alert(`Warning ${newStrikes}/${maxStrikes}: Please do not leave this tab. Switching windows again will submit your quiz automatically.`);
+                }
+
+                return newStrikes;
+            });
+        };
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+        window.addEventListener("blur", handleWindowBlur);
+
+        return () => {
+            document.removeEventListener("visibilitychange", handleVisibilityChange);
+            window.removeEventListener("blur", handleWindowBlur);
+        };
+    }, [strikes]);
 
     const handleSubmit = useCallback(async () => {
         if (!quiz) return;
@@ -219,7 +255,23 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ quizId, onClose }) => {
                     )}
                 </div>
             </div>
-
+            {strikes > 0 && (
+                <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
+                    <div className="flex">
+                        <div className="flex-shrink-0">
+                            <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                            </svg>
+                        </div>
+                        <div className="ml-3">
+                            <p className="text-sm text-red-700 font-bold">
+                                Integrity Warning: {strikes} of {maxStrikes} attempts used.
+                                Switching tabs again will submit your answers.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
             {/* Error Message */}
             {errorMsg && (
                 <div className="px-6 py-2 bg-red-100 dark:bg-red-500/10 text-red-700 dark:text-red-400 text-xs text-center border-t border-red-200 dark:border-red-500/20">
