@@ -98,7 +98,6 @@ const CourseForm = () => {
                 setTitle(course.title);
                 setDescription(course.description);
                 setThumbnailUrl(course.thumbnail);
-                console.log(course.instructors);
                 setInstructors(course.instructors);
                 setSelectedCategories(course.categories.map((cat: any) => cat.id));
             });
@@ -121,7 +120,13 @@ const CourseForm = () => {
             const formData = new FormData();
             formData.append("title", title);
             formData.append("description", description);
-            formData.append("instructors", instructors);
+            if (Array.isArray(instructors)) {
+                instructors.forEach((id: any) =>
+                    formData.append("instructors", id)
+                );
+            } else {
+                formData.append("instructors", instructors);
+            }
             if (thumbnail && typeof thumbnail !== 'string') {
                 formData.append("thumbnail", thumbnail as Blob);
             }

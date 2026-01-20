@@ -92,7 +92,7 @@ class UserSerializer(BaseUserSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'email', 'username', 'password', 'role'] 
+        fields = BaseUserSerializer.Meta.fields 
         extra_kwargs = {'password': {'write_only': True}}
 
     def create(self, validated_data, *args, **kwargs):
@@ -129,7 +129,10 @@ class AdminSerializer(BaseUserSerializer):
 class SimpleUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["id", "first_name", "last_name", "email", "phone", "role"]
+        fields = [
+            "id", "first_name", "last_name", "email", 
+            "phone", "role", "username", "avatar"
+        ]
 
 
 class SimpleCourseSerializer(serializers.ModelSerializer):

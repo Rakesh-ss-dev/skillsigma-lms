@@ -4,7 +4,8 @@ from accounts.models import User
 from quizzes.models import Quiz,Submission
 from enrollments.models import Enrollment
 from django.db.models import Prefetch
-
+from django.db import transaction
+from .tasks import upload_lesson_video_to_drive
 class CourseQuizSerializer(serializers.ModelSerializer):
     is_completed = serializers.SerializerMethodField()
     
@@ -24,6 +25,10 @@ class LessonSerializer(serializers.ModelSerializer):
     course = serializers.PrimaryKeyRelatedField(read_only=True)
     prerequisite_quiz_title = serializers.ReadOnlyField(source='prerequisite_quiz.title')
     is_completed = serializers.SerializerMethodField()
+    
+    # Explicitly define the temp file field for better control
+    video_file_temp = serializers.FileField(write_only=True, required=False)
+
     class Meta:
         model = Lesson
         fields = [
@@ -33,19 +38,61 @@ class LessonSerializer(serializers.ModelSerializer):
             'pdf_version', 'processing_status',
             'prerequisite_quiz', 'prerequisite_quiz_title', 'prerequisite_score',
             'is_completed',
+            'video_status',
+            'video_file_temp',
         ]
+        read_only_fields = ['video_status', 'video_url', 'processing_status', 'pdf_version']
 
     def create(self, validated_data):
         course = self.context.get('course')
         if not course:
             raise serializers.ValidationError({"course": "Course context is missing."})
-        return Lesson.objects.create(course=course, **validated_data)
+        validated_data['course'] = course
+        if not validated_data.get('content_file'):
+            validated_data['processing_status'] = 'skipped'
+        # 2. Check for Video Upload
+        has_video = 'video_file_temp' in validated_data and validated_data['video_file_temp']
+        if has_video:
+            # Set status immediately so frontend knows it's working
+            validated_data['video_status'] = 'processing'
+
+        # 3. Create the instance (Just once!)
+        lesson = super().create(validated_data)
+
+        # 4. Trigger Celery Task (After DB commit)
+        if has_video:
+            transaction.on_commit(lambda: upload_lesson_video_to_drive.delay(lesson.id))
+            
+        return lesson
+
+    def update(self, instance, validated_data):
+        # 1. Check for NEW Video Upload
+        has_new_video = 'video_file_temp' in validated_data and validated_data['video_file_temp']
+        
+        if not validated_data.get('content_file'):
+            validated_data['processing_status'] = 'skipped'
+            
+        if has_new_video:
+            validated_data['video_status'] = 'processing'
+            # Optional: Clear old URL while processing new one
+            # validated_data['video_url'] = '' 
+
+        # 2. Update the instance
+        lesson = super().update(instance, validated_data)
+
+        # 3. Trigger Celery Task
+        if has_new_video:
+            transaction.on_commit(lambda: upload_lesson_video_to_drive.delay(lesson.id))
+
+        return lesson
 
     def get_is_completed(self, obj):
         request = self.context.get('request')
         if request and request.user.is_authenticated:
+            # Optimization: Use prefetch_related data if available
             if hasattr(obj, 'user_progress'):
                 return any(p.is_completed for p in obj.user_progress)
+            # Fallback query
             return obj.progress.filter(student=request.user, is_completed=True).exists()
         return False
     

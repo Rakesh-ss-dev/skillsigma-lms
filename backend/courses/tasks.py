@@ -6,16 +6,16 @@ import shutil
 
 from celery import shared_task
 from django.core.files.base import ContentFile
-from django.apps import apps
 
+from utils.drive_service import upload_video_private
 
 @shared_task(bind=True, autoretry_for=(Exception,), retry_backoff=30, retry_kwargs={"max_retries": 3})
 def convert_lesson_to_pdf(self, lesson_id):
     """
     Converts Lesson.content_file to PDF and saves it to pdf_version.
     """
-
-    Lesson = apps.get_model('courses', 'Lesson')
+    # Safe import inside the function to avoid circular error
+    from .models import Lesson
 
     try:
         lesson = Lesson.objects.get(id=lesson_id)
@@ -23,6 +23,7 @@ def convert_lesson_to_pdf(self, lesson_id):
         return "Lesson not found"
 
     if not lesson.content_file:
+        lesson.processing_status = "skipped"
         return "No file to convert"
 
     # Mark as processing
@@ -105,3 +106,59 @@ def convert_lesson_to_pdf(self, lesson_id):
             os.remove(temp_input_path)
         if os.path.exists(temp_output_dir):
             shutil.rmtree(temp_output_dir)
+
+# tasks.py
+
+
+@shared_task
+def upload_lesson_video_to_drive(lesson_id):
+    from .models import Lesson
+    try:
+        lesson = Lesson.objects.get(id=lesson_id)
+        
+        # Check if file exists
+        if not lesson.video_file_temp or not os.path.exists(lesson.video_file_temp.path):
+            return "No file to upload"
+
+        # 1. Update status to Processing
+        lesson.video_status = 'processing'
+        lesson.save(update_fields=['video_status'])
+
+        print(f"Uploading video for Lesson {lesson_id}...")
+
+        # 2. Prepare the Path
+        # It is safer to pass the absolute path string to the uploader
+        file_path = lesson.video_file_temp.path
+        
+        # 3. Upload to Drive (Private)
+        # returns the ID string (e.g., '1a2B3c...')
+        file_id = upload_video_private(file_path)
+
+        # 4. Construct a valid URL for the Database
+        # We store the full URL to satisfy Django's URLField validation,
+        # but our views will extract the ID from it later.
+        drive_fake_url = f"https://drive.google.com/file/d/{file_id}/preview"
+
+        # 5. Update Lesson
+        lesson.video_url = drive_fake_url
+        lesson.video_status = 'completed'
+        
+        # 6. Cleanup (Delete the temp file from disk and DB field)
+        # storage.delete() handles the file on disk
+        lesson.video_file_temp.storage.delete(lesson.video_file_temp.name)
+        lesson.video_file_temp = None 
+        
+        lesson.save(update_fields=['video_url', 'video_status', 'video_file_temp'])
+        
+        return f"Upload Successful. Drive ID: {file_id}"
+
+    except Exception as e:
+        print(f"Video Upload Failed: {e}")
+        try:
+            # Re-fetch in case connection was lost
+            lesson = Lesson.objects.get(id=lesson_id)
+            lesson.video_status = 'failed'
+            lesson.save(update_fields=['video_status'])
+        except:
+            pass
+        return f"Failed: {e}"

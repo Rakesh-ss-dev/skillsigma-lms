@@ -69,3 +69,9 @@ pnpm-debug.log*
 .pnp.*
 .pnp.js
 *.css.map
+
+client_secrets.json
+creds.json
+credentials.json
+token.json  
+new-keys.json

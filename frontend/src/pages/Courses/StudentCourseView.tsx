@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Menu, X } from 'lucide-react';
-import { useParams } from 'react-router';
+import { useNavigate, useParams } from 'react-router';
 import API from '../../api/axios';
 
 // Imports from the files above
@@ -8,7 +8,7 @@ import { UIState, ContentItem } from '../../components/util/types';
 import { mapApiToUI } from '../../components/util/courseMapper';
 
 // Component Imports
-import { VideoPlayer } from '../../components/course/VideoPlayerNew';
+import { ContentPlayer } from '../../components/course/ContentPlayer';
 import { CurriculumSidebar } from '../../components/course/CurriculumSidebar';
 import { ProgressBar } from '../../components/course/ProgressBar';
 import QuizPlayer from '../../components/course/QuizPlayer';
@@ -18,7 +18,7 @@ export default function CoursePlayer() {
     const [courseData, setCourseData] = useState<UIState | null>(null);
     const [activeItem, setActiveItem] = useState<ContentItem | null>(null);
     const [sidebarOpen, setSidebarOpen] = useState(true);
-
+    const navigate = useNavigate();
     const { courseId } = useParams();
 
     useEffect(() => {
@@ -63,12 +63,13 @@ export default function CoursePlayer() {
 
         const currentIndex = courseData.curriculum.findIndex(i => i.id === itemId);
         const nextItem: ContentItem = courseData.curriculum[currentIndex + 1];
-        // console.log(courseData.curriculum[currentIndex])
+
         const response = await API.post('/progress/', { lesson: courseData.curriculum[currentIndex].id })
         console.log(response);
         const updatedCurriculum = courseData.curriculum.map((item, index) => {
             if (index === currentIndex) return { ...item, completed: true };
             if (index === currentIndex + 1) return { ...item, locked: false };
+            if (index === courseData.curriculum.length - 1) return item;
             return item;
         });
         setActiveItem(nextItem);
@@ -122,7 +123,7 @@ export default function CoursePlayer() {
                 </header>
                 {activeItem.type === 'lesson' ? (
                     <>
-                        <VideoPlayer
+                        <ContentPlayer
                             lesson={{
                                 ...activeItem,
                                 // Correctly map the HTML content to description for the player
@@ -132,10 +133,12 @@ export default function CoursePlayer() {
                         />
                     </>
                 ) : (
-                    <QuizPlayer
-                        quizId={Number(activeItem.quizId)}
-                        onClose={() => handleCompletion(activeItem.id)}
-                    />
+                    <div className="py-6 px-4 sm:px-6 lg:px-8">
+                        <QuizPlayer
+                            quizId={Number(activeItem.quizId)}
+                            onClose={() => navigate('/courses')}
+                        />
+                    </div>
                 )}
             </main>
 

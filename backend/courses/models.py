@@ -32,15 +32,25 @@ class Lesson(models.Model):
     )
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="lessons")
     title = models.CharField(max_length=255)
-    content = models.TextField()
+    content = models.TextField(null=True, blank=True)
     content_file = models.FileField(upload_to="lessons/content_files/", null=True, blank=True)
     pdf_version = models.FileField(upload_to="lessons/pdfs/", null=True, blank=True)
     processing_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     video_url = models.URLField(blank=True, null=True)
+    video_status = models.CharField(
+        max_length=20, 
+        choices=STATUS_CHOICES, 
+        default='pending'
+    )
+    video_file_temp = models.FileField(
+        upload_to="lessons/temp_videos/", 
+        null=True, 
+        blank=True
+    )
     order = models.PositiveIntegerField(default=0)
     resources = models.FileField(upload_to="lessons/resources/", null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-
+    is_processed = models.BooleanField(default=False)
     # NEW: Prerequisite Logic (String reference avoids circular imports)
     prerequisite_quiz = models.ForeignKey(
         'quizzes.Quiz', 

@@ -23,7 +23,6 @@ import ViewCourse from "./pages/Courses/ViewCourse";
 import UserCourse from "./pages/Courses/UserCourse";
 import DeleteLesson from "./pages/Courses/DeleteLesson";
 import DeleteAssessment from "./pages/Courses/DeleteAssessment";
-import LearnersDashboard from "./pages/Learners/LearnersDashboard";
 import SignIn from "./pages/AuthPages/SignIn";
 import SignUp from "./pages/AuthPages/SignUp";
 import NotFound from "./pages/OtherPage/NotFound";
@@ -39,11 +38,13 @@ export default function App() {
         {/* Dashboard Layout */}
         <Route element={<AppLayout />}>
 
+          <Route path="/profile" element={<UserProfiles />} />
+
 
           <Route element={<ProtectedRoute allowedRoles={["admin", "instructor"]} />}>
             <Route index path="/" element={<Home />} />
             {/* Others Page */}
-            <Route path="/profile" element={<UserProfiles />} />
+
             {/*Instructor Routes */}
             <Route path="/instructors" element={<Instructors />} />
             <Route path="/instructors/:instructorId/delete" element={<DeleteInstructor />} />
@@ -72,8 +73,7 @@ export default function App() {
 
 
           <Route element={<ProtectedRoute allowedRoles={["student"]} />}>
-            <Route index path="/me/" element={<LearnersDashboard />} />
-            <Route index path='/me/courses' element={<StudentCourses />} />
+            <Route index path="/me/" element={<StudentCourses />} />
             <Route index path="/me/course/:courseId" element={<StudentCourseView />} />
           </Route>
         </Route>

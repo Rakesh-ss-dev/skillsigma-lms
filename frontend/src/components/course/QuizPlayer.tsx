@@ -2,16 +2,14 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Quiz, QuizAnswerState, SubmissionPayload, SubmissionResult } from '../util/types';
 import API from '../../api/axios';
 
-
 interface QuizPlayerProps {
     quizId: number;
-    onClose?: () => void; // Optional: to close the modal or navigate away
+    onClose?: () => void;
 }
 
 type QuizStatus = 'loading' | 'error' | 'playing' | 'submitting' | 'finished';
 
 const QuizPlayer: React.FC<QuizPlayerProps> = ({ quizId, onClose }) => {
-    // --- State ---
     const [status, setStatus] = useState<QuizStatus>('loading');
     const [quiz, setQuiz] = useState<Quiz | null>(null);
     const [currentIdx, setCurrentIdx] = useState<number>(0);
@@ -20,27 +18,22 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ quizId, onClose }) => {
     const [result, setResult] = useState<SubmissionResult | null>(null);
     const [errorMsg, setErrorMsg] = useState<string>('');
 
-    // --- 1. Fetch Quiz ---
     useEffect(() => {
         const fetchQuiz = async () => {
             try {
                 const response = await API.get<Quiz>(`quiz/${quizId}/`);
                 setQuiz(response.data);
-
-                // Initialize timer if exists
                 if (response.data.time_limit) {
-                    setTimeLeft(response.data.time_limit * 60); // Convert mins to seconds
+                    setTimeLeft(response.data.time_limit * 60);
                 }
                 setStatus('playing');
             } catch (err) {
-                console.error("Failed to load quiz", err);
                 setStatus('error');
             }
         };
         fetchQuiz();
     }, [quizId]);
 
-    // --- 2. Timer Logic ---
     const handleSubmit = useCallback(async () => {
         if (!quiz) return;
         setStatus('submitting');
@@ -55,37 +48,30 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ quizId, onClose }) => {
         };
 
         try {
-            const response = await API.post<SubmissionResult>(
-                '/submission/',
-                payload
-            );
+            const response = await API.post<SubmissionResult>('/submission/', payload);
             setResult(response.data);
             setStatus('finished');
         } catch (err) {
-            console.error("Submission error", err);
             setErrorMsg("Failed to submit answers. Please try again.");
-            setStatus('playing'); // Allow retry
+            setStatus('playing');
         }
     }, [quiz, answers]);
 
     useEffect(() => {
         if (status !== 'playing' || timeLeft === 0) return;
-
         const timer = setInterval(() => {
             setTimeLeft((prev) => {
                 if (prev <= 1) {
                     clearInterval(timer);
-                    handleSubmit(); // Auto-submit on timeout
+                    handleSubmit();
                     return 0;
                 }
                 return prev - 1;
             });
         }, 1000);
-
         return () => clearInterval(timer);
     }, [status, timeLeft, handleSubmit]);
 
-    // --- 3. Input Handlers ---
     const handleOptionSelect = (qId: number, optId: number) => {
         setAnswers(prev => ({
             ...prev,
@@ -100,7 +86,6 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ quizId, onClose }) => {
         }));
     };
 
-    // --- 4. Render Helpers ---
     const formatTime = (seconds: number) => {
         const m = Math.floor(seconds / 60);
         const s = seconds % 60;
@@ -113,36 +98,34 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ quizId, onClose }) => {
         return Math.round((answeredCount / quiz.questions.length) * 100);
     };
 
-    // --- RENDER STATES ---
-
     if (status === 'loading') {
         return (
-            <div className="flex justify-center items-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <div className="flex justify-center items-center h-64 py-10">
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-brand-500"></div>
             </div>
         );
     }
 
     if (status === 'error') {
         return (
-            <div className="text-center p-8 text-red-600 bg-red-50 rounded-lg">
-                <h3 className="text-lg font-bold">Error Loading Quiz</h3>
-                <p>Please refresh the page or try again later.</p>
+            <div className="text-center p-6 text-red-600 py-10 bg-red-50 dark:bg-red-500/10 rounded-lg border border-red-200 dark:border-red-500/20">
+                <h3 className="font-bold">Error Loading Quiz</h3>
+                <p className="text-sm">Please refresh or try again later.</p>
             </div>
         );
     }
 
-    if (quiz?.is_completed || status === 'finished' && result) {
+    if (quiz?.is_completed || (status === 'finished' && result)) {
         return (
-            <div className="max-w-xl mx-auto bg-white shadow-xl rounded-2xl overflow-hidden mt-10 text-center p-8">
-                <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+            <div className="max-w-md mx-auto bg-white py-10 dark:bg-gray-900 shadow-lg rounded-2xl p-8 text-center border border-gray-100 dark:border-gray-800">
+                <div className="w-16 h-16 bg-green-100 dark:bg-green-500/10 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                 </div>
-                <h2 className="text-3xl font-bold text-gray-800 mb-2">Quiz Completed!</h2>
-                <p className="text-gray-500 mb-6">Your answers have been submitted successfully.</p>
+                <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">Quiz Completed!</h2>
+                <p className="text-gray-500 dark:text-gray-400 mb-6 text-sm">Your answers have been submitted successfully.</p>
                 <button
                     onClick={onClose}
-                    className="px-6 py-3 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors w-full font-medium"
+                    className="px-6 py-2.5 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors w-full font-medium"
                 >
                     Return to Course
                 </button>
@@ -150,90 +133,85 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ quizId, onClose }) => {
         );
     }
 
-    // --- MAIN PLAYING UI ---
     if (!quiz) return null;
     const question = quiz.questions[currentIdx];
     const currentAnswer = answers[question.id] || {};
     const isLastQuestion = currentIdx === quiz.questions.length - 1;
 
     return (
-        <div className="w-[90%] mx-auto bg-white shadow-xl rounded-xl overflow-hidden mt-6 flex flex-col">
+        <div className="max-w-3xl mx-auto w-full bg-white py-10 dark:bg-gray-900 shadow-xl rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden flex flex-col">
             {/* Header */}
-            <div className="bg-gray-50 px-6 py-4 border-b flex justify-between items-center sticky top-0 z-10">
+            <div className="bg-gray-50 dark:bg-gray-800/50 px-5 py-3 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center">
                 <div>
-                    <h1 className="text-lg font-bold text-gray-800">{quiz.title}</h1>
-                    <div className="text-xs text-gray-500 mt-1 flex items-center gap-2">
-                        <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
-                            Q{currentIdx + 1} / {quiz.questions.length}
+                    <h1 className="text-base font-bold text-gray-800 dark:text-white truncate max-w-[200px] md:max-w-xs">{quiz.title}</h1>
+                    <div className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5 flex items-center gap-2">
+                        <span className="bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 px-1.5 py-0.5 rounded font-bold">
+                            {currentIdx + 1} / {quiz.questions.length}
                         </span>
                         <span>Progress: {getProgress()}%</span>
                     </div>
                 </div>
 
                 {timeLeft > 0 && (
-                    <div className={`flex items-center gap-2 font-mono text-xl font-bold ${timeLeft < 60 ? 'text-red-600 animate-pulse' : 'text-gray-700'}`}>
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    <div className={`flex items-center gap-1.5 font-mono text-lg font-bold ${timeLeft < 60 ? 'text-red-600 animate-pulse' : 'text-gray-700 dark:text-gray-300'}`}>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                         {formatTime(timeLeft)}
                     </div>
                 )}
             </div>
 
             {/* Progress Bar */}
-            <div className="w-full bg-gray-200 h-1.5">
+            <div className="w-full bg-gray-200 dark:bg-gray-800 h-1">
                 <div
-                    className="bg-blue-600 h-1.5 transition-all duration-300"
+                    className="bg-brand-500 h-1 transition-all duration-300"
                     style={{ width: `${((currentIdx + 1) / quiz.questions.length) * 100}%` }}
                 />
             </div>
 
             {/* Question Body */}
-            <div className="p-8 flex-grow overflow-y-auto">
-                <div className="mb-6">
-                    <span className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-2 block">
+            <div className="p-6 flex-grow">
+                <div className="mb-5">
+                    <span className="text-[10px] font-bold text-brand-500 uppercase tracking-widest mb-1 block">
                         {question.question_type === 'mcq' ? 'Multiple Choice' :
                             question.question_type === 'tf' ? 'True / False' : 'Short Answer'}
                     </span>
-                    <h2 className="text-2xl font-medium text-gray-900 leading-relaxed">
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 leading-snug">
                         {question.text}
                     </h2>
                 </div>
 
-                <div className="space-y-3">
-                    {/* Render Options: MCQ or TF */}
+                <div className="space-y-2">
                     {(question.question_type === 'mcq' || question.question_type === 'tf') && (
-                        <div className="grid gap-3">
+                        <div className="grid gap-2">
                             {question.options.map((option) => {
                                 const isSelected = currentAnswer.selected_option === option.id;
                                 return (
-                                    <div
+                                    <button
                                         key={option.id}
                                         onClick={() => handleOptionSelect(question.id, option.id)}
-                                        className={`group p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 flex items-center justify-between
+                                        className={`group p-3 border-2 rounded-lg text-left transition-all duration-200 flex items-center gap-3
                                             ${isSelected
-                                                ? 'border-blue-500 bg-blue-50'
-                                                : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
+                                                ? 'border-brand-500 bg-brand-50 dark:bg-brand-500/10'
+                                                : 'border-gray-100 dark:border-gray-800 hover:border-brand-200 dark:hover:border-brand-500/30 hover:bg-gray-50 dark:hover:bg-white/[0.02]'
                                             }`}
                                     >
-                                        <div className="flex items-center gap-4">
-                                            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors
-                                                ${isSelected ? 'border-blue-500 bg-blue-500' : 'border-gray-300 group-hover:border-blue-400'}`}>
-                                                {isSelected && <div className="w-2.5 h-2.5 bg-white rounded-full" />}
-                                            </div>
-                                            <span className={`text-lg ${isSelected ? 'text-blue-900 font-medium' : 'text-gray-700'}`}>
-                                                {option.text}
-                                            </span>
+                                        <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-colors
+                                            ${isSelected ? 'border-brand-500 bg-brand-500' : 'border-gray-300 dark:border-gray-600'}`}>
+                                            {isSelected && <div className="w-2 h-2 bg-white rounded-full" />}
                                         </div>
-                                    </div>
+                                        <span className={`text-sm ${isSelected ? 'text-brand-900 dark:text-brand-400 font-medium' : 'text-gray-700 dark:text-gray-400'}`}>
+                                            {option.text}
+                                        </span>
+                                    </button>
                                 );
                             })}
                         </div>
                     )}
 
-                    {/* Render Input: Short Answer */}
                     {question.question_type === 'short' && (
                         <textarea
-                            className="w-full p-4 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all outline-none text-lg"
-                            rows={5}
+                            className="w-full p-3 bg-white dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-800 rounded-lg focus:border-brand-500 outline-none text-sm text-gray-800 dark:text-gray-200 transition-all"
+                            rows={4}
                             placeholder="Type your answer here..."
                             value={currentAnswer.text_answer || ''}
                             onChange={(e) => handleTextChange(question.id, e.target.value)}
@@ -242,19 +220,19 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ quizId, onClose }) => {
                 </div>
             </div>
 
-            {/* Error Message Toast */}
+            {/* Error Message */}
             {errorMsg && (
-                <div className="px-8 py-2 bg-red-100 text-red-700 text-sm text-center">
+                <div className="px-6 py-2 bg-red-100 dark:bg-red-500/10 text-red-700 dark:text-red-400 text-xs text-center border-t border-red-200 dark:border-red-500/20">
                     {errorMsg}
                 </div>
             )}
 
-            {/* Footer / Navigation */}
-            <div className="bg-gray-50 p-6 border-t flex justify-between items-center">
+            {/* Footer */}
+            <div className="bg-gray-50 dark:bg-gray-800/30 p-4 border-t border-gray-200 dark:border-gray-800 flex justify-between items-center">
                 <button
                     onClick={() => setCurrentIdx(prev => Math.max(0, prev - 1))}
                     disabled={currentIdx === 0 || status === 'submitting'}
-                    className="px-6 py-2.5 rounded-lg text-gray-600 font-medium hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="px-4 py-2 rounded-lg text-gray-500 dark:text-gray-400 text-sm font-bold hover:bg-gray-200 dark:hover:bg-gray-800 disabled:opacity-30 transition-colors"
                 >
                     Previous
                 </button>
@@ -263,19 +241,14 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ quizId, onClose }) => {
                     <button
                         onClick={handleSubmit}
                         disabled={status === 'submitting'}
-                        className="px-8 py-2.5 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 disabled:opacity-70 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg flex items-center gap-2"
+                        className="px-5 py-2 bg-green-600 dark:bg-green-500 text-white rounded-lg text-sm font-bold hover:bg-green-700 disabled:opacity-50 transition-all flex items-center gap-2"
                     >
-                        {status === 'submitting' ? (
-                            <>
-                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                Submitting...
-                            </>
-                        ) : 'Finish & Submit'}
+                        {status === 'submitting' ? 'Submitting...' : 'Finish & Submit'}
                     </button>
                 ) : (
                     <button
                         onClick={() => setCurrentIdx(prev => Math.min(quiz.questions.length - 1, prev + 1))}
-                        className="px-8 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-all shadow-md hover:shadow-lg"
+                        className="px-5 py-2 bg-brand-500 text-white rounded-lg text-sm font-bold hover:bg-brand-600 transition-all"
                     >
                         Next Question
                     </button>

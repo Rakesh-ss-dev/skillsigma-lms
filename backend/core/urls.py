@@ -1,7 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from accounts.views import UserViewSet, StudentGroupViewSet,InstructorViewSet,AdminViewSet
-from courses.views import CourseViewSet, LessonViewSet,CategoryViewSet,LessonProgressViewSet
+from courses.views import CourseViewSet, LessonViewSet,CategoryViewSet,LessonProgressViewSet,LessonVideoStreamView
 from enrollments.views import EnrollmentViewSet, GroupEnrollmentViewSet
 from quizzes.views import QuizViewSet, QuestionViewSet, OptionViewSet, SubmissionViewSet
 from certificates.views import CertificateViewSet
@@ -44,5 +44,6 @@ urlpatterns = [
     path("api/", include(router.urls)),
     path('api/', include(courses_router.urls)),
     path("api/auth/", include("accounts.jwt_urls")),
-    path('silk/', include('silk.urls', namespace='silk'))
+    path('silk/', include('silk.urls', namespace='silk')),
+    path('api/lessons/<int:lesson_id>/stream/', LessonVideoStreamView.as_view(), name='lesson-video-stream'),
 ]+static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -7,15 +7,19 @@ import Button from "../ui/button/Button";
 import toast from "react-hot-toast";
 import API from "../../api/axios";
 import { Modal } from "../ui/modal";
+
 interface LessonFormProps {
     isOpen: boolean;
     closeModal: () => void;
     mode?: "edit" | "create";
     lessonId?: number;
 }
+
 function LessonForm({ isOpen, closeModal, mode, lessonId }: LessonFormProps) {
     const { courseId } = useParams();
     const [isProcessing, setIsProcessing] = useState(false);
+
+    // 1. Updated State to match Serializer fields
     const [formdata, setFormData] = useState({
         title: "",
         order: "",
@@ -23,63 +27,75 @@ function LessonForm({ isOpen, closeModal, mode, lessonId }: LessonFormProps) {
         video_url: "",
         content_file: null as File | null,
         resources: null as File | null,
+        video_file_temp: null as File | null, // Changed from video_upload to match Serializer
     });
+
     useEffect(() => {
         if (mode === "edit" && lessonId) {
             const fetchLesson = async () => {
                 try {
                     const response = await API.get(`/courses/${courseId}/lessons/${lessonId}`);
-                    setFormData(response.data);
+                    // We don't load 'video_file_temp' from the backend as it's write-only
+                    setFormData(prev => ({
+                        ...prev,
+                        ...response.data,
+                        video_file_temp: null // Reset file input on load
+                    }));
                 } catch (error) {
                     toast.error("Error fetching lesson:" + error);
                 }
             };
             fetchLesson();
         }
-    }, [lessonId, mode]);
+    }, [lessonId, mode, courseId]);
+
     const handleClose = (e: React.MouseEvent) => {
         e.preventDefault();
         closeModal();
     };
+
+    // 2. Updated Polling Logic for both PDF and Video
     const checkStatus = async (id: number) => {
         try {
             const response = await API.get(`/courses/${courseId}/lessons/${id}/`);
             setIsProcessing(true);
-            setTimeout(() => {
-                if (response.data.processing_status === "processing" || response.data.processing_status === "pending") {
-                    checkStatus(id);
-                }
-                else if (response.data.processing_status === "completed") {
-                    toast.success("Lesson PDF processed successfully.");
-                    setIsProcessing(false);
-                    setFormData({
-                        title: "",
-                        order: "",
-                        content: "",
-                        video_url: "",
-                        content_file: null,
-                        resources: null,
-                    });
-                    closeModal();
-                }
-                else if (response.data.processing_status === "failed") {
-                    toast.error("Lesson PDF processing failed.");
-                    setIsProcessing(false);
-                    setFormData({
-                        title: "",
-                        order: "",
-                        content: "",
-                        video_url: "",
-                        content_file: null,
-                        resources: null,
-                    });
-                    closeModal();
-                }
-            }, 2000);
+            const { processing_status, video_status } = response.data;
+
+            // 1. Define what counts as "Busy"
+            const isPdfBusy = processing_status === "processing" || processing_status === "pending";
+            const isVideoBusy = video_status === "processing";
+
+            // 2. Use the variables in the logic
+            if (isPdfBusy || isVideoBusy) {
+                // If either is still working, poll again in 2 seconds
+                setTimeout(() => checkStatus(id), 2000);
+            }
+            else if (processing_status === "failed" || video_status === "failed") {
+                setIsProcessing(false);
+                toast.error("Processing failed for one or more files.");
+                closeModal();
+            }
+            else {
+                // All done!
+                toast.success("Lesson processed successfully.");
+                setIsProcessing(false);
+                setFormData({
+                    title: "",
+                    order: "",
+                    content: "",
+                    video_url: "",
+                    content_file: null,
+                    resources: null,
+                    video_file_temp: null,
+                });
+                closeModal();
+            }
         } catch (error) {
             toast.error("Error fetching lesson status:" + error);
+            setIsProcessing(false);
         }
     }
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value, files } = e.target;
         if (files) {
@@ -107,6 +123,8 @@ function LessonForm({ isOpen, closeModal, mode, lessonId }: LessonFormProps) {
             fd.append("title", formdata.title);
             fd.append("order", formdata.order);
             fd.append("content", formdata.content);
+            // We append video_url mostly for read purposes, but if you allow manual override, keep it.
+            // If the backend overrides it via Celery, this value might be ignored if a file is present.
             fd.append("video_url", formdata.video_url);
 
             if (formdata.content_file && typeof formdata.content_file !== "string") {
@@ -115,22 +133,29 @@ function LessonForm({ isOpen, closeModal, mode, lessonId }: LessonFormProps) {
             if (formdata.resources && typeof formdata.resources !== "string") {
                 fd.append("resources", formdata.resources);
             }
+
+            // 3. Append the video file with the correct key
+            if (formdata.video_file_temp) {
+                fd.append("video_file_temp", formdata.video_file_temp);
+            }
+
             if (mode === "edit" && lessonId) {
                 await API.patch(`/courses/${courseId}/lessons/${lessonId}/`, fd, {
                     headers: { "Content-Type": "multipart/form-data" },
                 });
                 await checkStatus(lessonId);
-                toast.success("Lesson Updated Successfully")
+                toast.success("Lesson update initiated...")
             } else {
                 const response = await API.post(`/courses/${courseId}/lessons/`, fd, {
                     headers: { "Content-Type": "multipart/form-data" },
                 });
                 await checkStatus(response.data.id);
-                toast.success("Lesson Added Successfully");
+                toast.success("Lesson creation initiated...");
             }
 
         } catch (err) {
-            toast.error(`Error submitting lesson:${err}`);
+            setIsProcessing(false);
+            toast.error(`Error submitting lesson: ${err}`);
         }
     };
 
@@ -144,17 +169,19 @@ function LessonForm({ isOpen, closeModal, mode, lessonId }: LessonFormProps) {
                 </div>
                 <form className="flex flex-col" onSubmit={handleSubmit}>
 
-                    {isProcessing && <div className="px-2 py-4 text-center flex items-center justify-center fixed w-full h-full top-0 left-0 bg-gray-100/75 z-999999">
+                    {isProcessing && <div className="px-2 py-4 text-center flex items-center justify-center fixed w-full h-full top-0 left-0 bg-gray-100/75 z-[9999]">
                         <div className="flex flex-col items-center justify-center min-h-[200px]">
                             {/* Outer Ring */}
                             <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
 
                             {/* Loading Text */}
                             <p className="mt-4 text-lg font-medium text-gray-600 animate-pulse">
-                                Uploading and processing files, please wait...
+                                Uploading and processing files...<br />
+                                <span className="text-sm text-gray-400">(Large videos may take a minute)</span>
                             </p>
                         </div>
                     </div>}
+
                     <div className="px-2 overflow-y-auto custom-scrollbar">
                         <div className="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
                             <div>
@@ -186,32 +213,51 @@ function LessonForm({ isOpen, closeModal, mode, lessonId }: LessonFormProps) {
                             </div>
 
                             <div>
-                                <Label>Content File</Label>
+                                <Label>Content File (PDF/Docs)</Label>
                                 <Input type="file" accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx" name="content_file" onChange={handleChange} />
-                                {formdata.content_file && (<div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                                    <Link to={String(formdata.content_file)} target="_blank" className="text-blue-600 hover:text-blue-800">
-                                        View Current File
-                                    </Link>
-                                </div>)}
+                                {formdata.content_file && typeof formdata.content_file === 'string' && (
+                                    <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                                        <Link to={String(formdata.content_file)} target="_blank" className="text-blue-600 hover:text-blue-800">
+                                            View Current File
+                                        </Link>
+                                    </div>
+                                )}
                             </div>
 
                             <div>
                                 <Label>Resources File</Label>
                                 <Input type="file" accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx" name="resources" onChange={handleChange} />
-                                {formdata.resources && (<div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                                    <Link to={String(formdata.resources)} target="_blank" className="text-blue-600 hover:text-blue-800">
-                                        View Current File
-                                    </Link>
-                                </div>)}
+                                {formdata.resources && typeof formdata.resources === 'string' && (
+                                    <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                                        <Link to={String(formdata.resources)} target="_blank" className="text-blue-600 hover:text-blue-800">
+                                            View Current File
+                                        </Link>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* 4. Video Upload Section */}
+                            <div className="md:col-span-2">
+                                <Label>Upload Video (Stored on Google Drive)</Label>
+                                <Input
+                                    type="file"
+                                    accept="video/*"
+                                    name="video_file_temp" // Matches state and serializer
+                                    onChange={handleChange}
+                                />
+                                <p className="text-xs text-gray-500 mt-1">
+                                    Uploading a new video will replace the existing one.
+                                </p>
                             </div>
 
                             <div className="md:col-span-2">
-                                <Label>Video URL</Label>
+                                <Label>Video URL (Auto-filled after processing)</Label>
                                 <Input
                                     type="text"
                                     name="video_url"
                                     value={formdata.video_url}
-                                    onChange={handleChange}
+                                    readonly={true}
+                                    className="bg-gray-100 cursor-not-allowed text-gray-500"
                                 />
                             </div>
                         </div>
