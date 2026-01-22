@@ -25,9 +25,9 @@ const ViewCourse = () => {
         <div className="max-w-7xl mx-auto mt-10 bg-white shadow-md rounded dark:bg-gray-800 rounded-lg">
             {course ? (
                 <div>
-                    <div className="flex flex-col md:flex-row gap-5 border-b border-gray-200 dark:border-gray-700">
+                    <div className="flex flex-col md:flex-row gap-5 items-center justify-center border-b border-gray-200 dark:border-gray-700">
                         <div className="p-5 flex flex-col md:flex-row gap-3 justify-start items-center">
-                            <div><img src={course.thumbnail} alt={course.title} width={100} /></div>
+                            <div><img src={course.thumbnail} alt={course.title} width={300} /></div>
                             <div>
                                 <h1 className="text-2xl font-bold mb-2 text-gray-900 dark:text-gray-100">{course.title}</h1>
                                 <p className="text-gray-700 dark:text-gray-300">{course.description}</p>
@@ -37,7 +37,7 @@ const ViewCourse = () => {
                             <div className="flex flex-row gap-2 text-gray-700 dark:text-gray-300">Categories:<span className="flex flex-row gap-2">{course.categories.map((cat: any) => <Badge key={cat.id}>{cat.name}</Badge>)}</span></div>
                         </div>
                         <div className="ms-auto">
-                            <Button size="sm" className="m-5" onClick={() => navigate(`/courses/${courseId}/user-view`)}>
+                            <Button size="sm" className="m-5 text-nowrap" onClick={() => navigate(`/courses/${courseId}/user-view`)}>
                                 View as User
                             </Button>
                         </div>

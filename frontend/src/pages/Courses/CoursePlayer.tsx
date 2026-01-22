@@ -168,18 +168,6 @@ export default function CoursePlayer({ courseData }: any) {
                                 <div className="flex justify-between items-start mb-6 pb-6 border-b dark:border-gray-800">
                                     <div>
                                         <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{activeLesson.title}</h2>
-                                        <div className="mt-4">
-                                            <button
-                                                onClick={() => toggleComplete(activeLesson.id)}
-                                                className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-bold transition-all ${completedLessonIds.includes(activeLesson.id)
-                                                    ? 'bg-green-600 text-white'
-                                                    : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200'
-                                                    }`}
-                                            >
-                                                <CheckCircle size={16} />
-                                                {completedLessonIds.includes(activeLesson.id) ? 'Lesson Completed' : 'Mark as Completed'}
-                                            </button>
-                                        </div>
                                     </div>
 
                                     <button
@@ -190,12 +178,12 @@ export default function CoursePlayer({ courseData }: any) {
                                     </button>
                                 </div>
 
-                                <div className="prose max-w-none text-gray-700 dark:text-gray-300">
+                                {activeLesson.content.length > 0 && <div className="prose max-w-none text-gray-700 dark:text-gray-300">
                                     <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Lesson Notes</h3>
                                     <div className='border dark:border-gray-700 p-5 rounded-md bg-gray-50 dark:bg-gray-800/50'
                                         dangerouslySetInnerHTML={{ __html: activeLesson.content }}
                                     />
-                                </div>
+                                </div>}
                             </div>
                         </div>
                     ) : (

@@ -109,7 +109,7 @@ const StudentDetails = ({ user }: any) => {
                                 <Table className="w-full">
                                     <TableHead className="bg-gray-50 dark:bg-gray-800/50">
                                         <TableRow>
-                                            <TableCell className="text-center font-bold text-gray-700 dark:text-gray-200">
+                                            <TableCell className="font-bold text-gray-700 dark:text-gray-200">
                                                 Course Name
                                             </TableCell>
                                             <TableCell className="text-center font-bold text-gray-700 dark:text-gray-200">
@@ -127,7 +127,7 @@ const StudentDetails = ({ user }: any) => {
                                                 key={enrollment.id}
                                                 className="hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors"
                                             >
-                                                <TableCell className="text-center text-gray-600 dark:text-gray-400">
+                                                <TableCell className="text-gray-600 dark:text-gray-400">
                                                     {enrollment.course?.title || "Untitled Course"}
                                                 </TableCell>
                                                 <TableCell className="text-center">

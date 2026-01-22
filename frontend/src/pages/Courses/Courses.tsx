@@ -20,7 +20,7 @@ export default function Courses() {
     const columns: ColumnDef<Course>[] = [
         {
             accessorKey: "title", header: "Course", cell: ({ row }) => (
-                <Link className="flex items-center justify-center gap-3" to={`/courses/${row.original.id}`} >
+                <Link className="flex items-center gap-3" to={`/courses/${row.original.id}`} >
                     {row.original.thumbnail && <img src={row.original.thumbnail} alt={row.original.title} className="h-10 w-10 rounded object-cover" />}
                     <span>{row.original.title}</span>
                 </Link>
