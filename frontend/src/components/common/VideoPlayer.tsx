@@ -5,34 +5,44 @@ import { MediaPlayer, MediaProvider } from '@vidstack/react';
 import { DefaultVideoLayout, defaultLayoutIcons } from '@vidstack/react/player/layouts/default';
 
 interface VideoPlayerProps {
-    streamUrl: string; // The Django URL (e.g., /api/lessons/1/stream/)
+    streamUrl: string;
     title?: string;
 }
 
 const VideoPlayer: React.FC<VideoPlayerProps> = ({ streamUrl, title = "Course Content" }) => {
 
-    // 1. Construct the Authenticated URL
-    // We must append the token because <video> tags cannot send Auth Headers
-    const authenticatedUrl = useMemo(() => {
-        const token = localStorage.getItem('access');
-        if (!token) return streamUrl;
-
-        // Check if URL already has params to append correctly
-        const separator = streamUrl.includes('?') ? '&' : '?';
-        return `${streamUrl}${separator}token=${token}`;
+    const isExternal = useMemo(() => {
+        return streamUrl.includes('youtu.be') ||
+            streamUrl.includes('youtube.com') ||
+            streamUrl.includes('vimeo.com');
     }, [streamUrl]);
 
+
+    const authenticatedUrl = useMemo(() => {
+        const token = localStorage.getItem('access');
+        if (!token || isExternal) return streamUrl;
+        const separator = streamUrl.includes('?') ? '&' : '?';
+        return `${streamUrl}${separator}token=${token}`;
+    }, [streamUrl, isExternal]);
+
+    const mediaSrc = useMemo(() => {
+        if (isExternal) {
+            return authenticatedUrl;
+        } else {
+            return {
+                src: authenticatedUrl,
+                type: 'video/mp4' as 'video/mp4'
+            };
+        }
+    }, [authenticatedUrl, isExternal]);
     return (
         <div style={{ width: '100%', maxWidth: '900px', margin: '0 auto' }}>
             <MediaPlayer
-                src={{
-                    src: authenticatedUrl,
-                    type: 'video/mp4' // Explicitly tell Vidstack this is a video file
-                }}
+                src={mediaSrc}
                 viewType="video"
                 streamType="on-demand"
                 logLevel="warn"
-                crossOrigin={true} // Important for cookies/CORS
+                crossOrigin={true}
                 playsInline
                 title={title}
                 aspectRatio="16/9"

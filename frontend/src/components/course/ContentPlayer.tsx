@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Play, FileText } from 'lucide-react'; // Ensure you have lucide-react installed or use alternatives
 import { ContentItem } from '../util/types';
 import PDFViewer from '../common/PDFViewer';
@@ -20,6 +20,14 @@ export const ContentPlayer: React.FC<ContentPlayerProps> = ({ lesson, onComplete
     const [activeTab, setActiveTab] = useState<'video' | 'pdf'>('video');
 
     // 3. Reset tab when lesson changes
+    const playerUrl = useMemo(() => {
+        if (!lesson.video_url) return '';
+        const isGoogleDrive = lesson.video_url.includes('drive.google.com');
+        if (isGoogleDrive) {
+            return `${apiUrl}/lessons/${lesson.id}/stream/`;
+        }
+        return lesson.video_url;
+    }, [lesson, apiUrl]);
     useEffect(() => {
         if (hasVideo) {
             setActiveTab('video');
@@ -35,7 +43,7 @@ export const ContentPlayer: React.FC<ContentPlayerProps> = ({ lesson, onComplete
             return (
                 <div className="bg-black w-full aspect-video flex items-center justify-center relative shadow-md">
                     <div style={{ width: '100%', maxWidth: '900px', margin: '0 auto' }}>
-                        <VideoPlayer streamUrl={`${apiUrl}/lessons/${lesson.id}/stream/`} />
+                        <VideoPlayer streamUrl={playerUrl} />
                     </div>
                 </div>
             );

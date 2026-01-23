@@ -1,18 +1,25 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Play, FileText, Menu, ArrowLeft, CheckCircle } from 'lucide-react';
+import { Play, FileText, Menu, ArrowLeft } from 'lucide-react';
 import PDFViewer from '../../components/common/PDFViewer';
 import VideoPlayer from '../../components/common/VideoPlayer';
 import { useNavigate } from 'react-router';
 
 // --- REFRACTORED CONTENT VIEWER ---
 const ContentViewer = ({ lesson }: any) => {
+
     const apiUrl = import.meta.env.VITE_API_URL;
     const hasVideo = !!lesson.video_url;
     const hasPdf = !!lesson.pdf_version;
 
-    // Default to video if available, otherwise pdf.
-    // We use a state to toggle, but we use an Effect to reset this when the lesson changes.
     const [activeTab, setActiveTab] = useState<'video' | 'pdf'>('video');
+    const playerUrl = useMemo(() => {
+        if (!lesson.video_url) return '';
+        const isGoogleDrive = lesson.video_url.includes('drive.google.com');
+        if (isGoogleDrive) {
+            return `${apiUrl}/lessons/${lesson.id}/stream/`;
+        }
+        return lesson.video_url;
+    }, [lesson, apiUrl]);
 
     useEffect(() => {
         if (hasVideo) {
@@ -27,7 +34,10 @@ const ContentViewer = ({ lesson }: any) => {
         if (activeTab === 'video' && hasVideo) {
             return (
                 <div className="aspect-video w-full flex items-center justify-center bg-black">
-                    <VideoPlayer streamUrl={`${apiUrl}/lessons/${lesson.id}/stream/`} />
+                    <VideoPlayer
+                        streamUrl={playerUrl}
+                        title={lesson.title}
+                    />
                 </div>
             );
         }
@@ -99,10 +109,7 @@ export default function CoursePlayer({ courseData }: any) {
     const [sidebarOpen, setSidebarOpen] = useState(true);
 
     // Track completed lesson IDs
-    const [completedLessonIds, setCompletedLessonIds] = useState<number[]>([]);
 
-    const isAllCompleted = sortedLessons.length > 0 &&
-        completedLessonIds.length === sortedLessons.length;
 
     useEffect(() => {
         if (courseData && courseData.lessons.length > 0) {
@@ -110,12 +117,6 @@ export default function CoursePlayer({ courseData }: any) {
         }
     }, [courseData, sortedLessons]);
 
-    // Toggle completion handler
-    const toggleComplete = (id: number) => {
-        setCompletedLessonIds(prev =>
-            prev.includes(id) ? prev.filter(lId => lId !== id) : [...prev, id]
-        );
-    };
 
     if (!courseData) return <div className="dark:text-white p-10">Loading...</div>;
 
@@ -132,11 +133,6 @@ export default function CoursePlayer({ courseData }: any) {
                     </button>
                     <h1 className="text-sm font-medium truncate max-w-md">{courseData.title}</h1>
                 </div>
-                {isAllCompleted && (
-                    <div className="hidden md:flex items-center gap-2 text-green-400 text-sm font-bold animate-pulse">
-                        <CheckCircle size={16} /> Course Completed!
-                    </div>
-                )}
             </header>
 
             {/* --- MAIN LAYOUT --- */}
@@ -145,23 +141,7 @@ export default function CoursePlayer({ courseData }: any) {
                 {/* LEFT: CONTENT AREA */}
                 <main className="flex-1 overflow-y-auto bg-white dark:bg-gray-900">
                     {/* SHOW COMPLETION MESSAGE IF FINISHED */}
-                    {isAllCompleted ? (
-                        <div className="flex flex-col items-center justify-center min-h-[70vh] p-6 text-center">
-                            <div className="w-20 h-20 bg-green-100 dark:bg-green-500/10 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center mb-6 animate-bounce">
-                                <CheckCircle size={48} />
-                            </div>
-                            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Congratulations!</h2>
-                            <p className="text-gray-600 dark:text-gray-400 mb-8 max-w-md">
-                                You have successfully completed all the lessons in this course. You can now return to your dashboard or explore more courses.
-                            </p>
-                            <button
-                                onClick={() => navigate('/courses')}
-                                className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow-lg transition-all transform hover:scale-105"
-                            >
-                                Back to My Courses
-                            </button>
-                        </div>
-                    ) : activeLesson ? (
+                    {activeLesson ? (
                         <div>
                             <ContentViewer lesson={activeLesson} />
                             <div className="max-w-5xl mx-auto p-6">
@@ -207,7 +187,6 @@ export default function CoursePlayer({ courseData }: any) {
                         <div className="bg-white dark:bg-gray-800">
                             {sortedLessons.map((lesson: any, index: number) => {
                                 const isActive = activeLesson?.id === lesson.id;
-                                const isDone = completedLessonIds.includes(lesson.id);
                                 return (
                                     <div
                                         key={lesson.id}
@@ -215,15 +194,6 @@ export default function CoursePlayer({ courseData }: any) {
                                         className={`flex items-start gap-3 p-4 text-sm border-b dark:border-gray-700 cursor-pointer transition-colors 
                                             ${isActive ? 'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-l-blue-600' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50 border-l-4 border-l-transparent'}`}
                                     >
-                                        <div className="mt-0.5">
-                                            <input
-                                                type="checkbox"
-                                                className="w-4 h-4 accent-green-600"
-                                                checked={isDone}
-                                                onChange={() => toggleComplete(lesson.id)}
-                                                onClick={(e) => e.stopPropagation()}
-                                            />
-                                        </div>
                                         <div className="flex-1">
                                             <p className={`font-medium ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'}`}>
                                                 {index + 1}. {lesson.title}
