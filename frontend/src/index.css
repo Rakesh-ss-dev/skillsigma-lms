@@ -854,8 +854,34 @@ span.flatpickr-weekday,
     @apply bg-background text-foreground;
   }
 }
-.my-player {
-  --media-font-family: Outfit, sans-serif;
-  /* You can also adjust weights and sizes if needed */
+
+.player-wrapper {
+  --media-font-family: var(--font-outfit);
   --media-font-weight: 500;
+}
+
+.player-wrapper .vds-chapter-title {
+  font-family: var(--font-outfit);
+}
+
+.vds-chapter-title.vds-chapter-title,
+.vds-tooltip-content {
+  font-family: var(--font-outfit);
+}
+.animated-gradient {
+  background: linear-gradient(90deg, #abecd6 0%, #fbed96 100%);
+  background-size: 100% 100%;
+  animation: animated-gradient-flow 10s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes animated-gradient-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }

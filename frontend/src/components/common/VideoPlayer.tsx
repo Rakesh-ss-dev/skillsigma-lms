@@ -46,7 +46,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ streamUrl, title = "Course Co
                 playsInline
                 title={title}
                 aspectRatio="16/9"
-                className="font-sans"
+                className="my-player player-wrapper"
             >
                 <MediaProvider />
                 <DefaultVideoLayout icons={defaultLayoutIcons} />

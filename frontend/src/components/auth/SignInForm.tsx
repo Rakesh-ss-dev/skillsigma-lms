@@ -12,16 +12,16 @@ export default function SignInForm() {
   const [password, setPassword] = useState("");
   const { login } = useAuth();
   return (
-    <div className="flex flex-col flex-1 h-screen p-4 align-center lg:justify-center" style={{ backgroundImage: "linear-gradient(to top, #3f51b1 0%, #5a55ae 13%, #7b5fac 25%, #8f6aae 38%, #a86aa4 50%, #cc6b8e 62%, #f18271 75%, #f3a469 87%, #f7c978 100%)" }}>
-      <div className="flex flex-col justify-center flex-1 w-full max-w-md mx-auto">
+    <div className="flex flex-col flex-1 h-screen p-4 align-center lg:justify-center animated-gradient">
+      <div className="flex flex-col  justify-center flex-1 w-full max-w-md mx-auto">
         <ComponentCard title="Skill Sigma LMS" desc="LMS for modern teams">
-          <div>
+          <div className="bg-white dark:bg-gray-800">
             <form onSubmit={async (e) => {
               e.preventDefault();
               await login(email, password);
 
             }}>
-              <div className="space-y-6">
+              <div className="space-y-6 p-6">
                 <div>
                   <Label>
                     Email <span className="text-error-500">*</span>{" "}
