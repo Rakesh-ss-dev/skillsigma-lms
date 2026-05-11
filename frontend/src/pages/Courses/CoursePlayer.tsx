@@ -3,7 +3,6 @@ import { Play, FileText, Menu, ArrowLeft } from 'lucide-react';
 import PDFViewer from '../../components/common/PDFViewer';
 import VideoPlayer from '../../components/common/VideoPlayer';
 import { useNavigate } from 'react-router';
-
 // --- REFRACTORED CONTENT VIEWER ---
 const ContentViewer = ({ lesson }: any) => {
 
@@ -144,6 +143,12 @@ export default function CoursePlayer({ courseData }: any) {
                     {activeLesson ? (
                         <div>
                             <ContentViewer lesson={activeLesson} />
+                            {/* --- AI TUTOR SECTION --- */}
+                            <div className="mt-10 pt-10 border-t dark:border-gray-800">
+                                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Interactive Tutor</h3>
+                                {/* key={activeLesson.id} ensures the tutor resets when you switch lessons */}
+
+                            </div>
                             <div className="max-w-5xl mx-auto p-6">
                                 <div className="flex justify-between items-start mb-6 pb-6 border-b dark:border-gray-800">
                                     <div>
@@ -164,6 +169,7 @@ export default function CoursePlayer({ courseData }: any) {
                                         dangerouslySetInnerHTML={{ __html: activeLesson.content }}
                                     />
                                 </div>}
+
                             </div>
                         </div>
                     ) : (
@@ -188,27 +194,31 @@ export default function CoursePlayer({ courseData }: any) {
                             {sortedLessons.map((lesson: any, index: number) => {
                                 const isActive = activeLesson?.id === lesson.id;
                                 return (
-                                    <div
-                                        key={lesson.id}
-                                        onClick={() => setActiveLesson(lesson)}
-                                        className={`flex items-start gap-3 p-4 text-sm border-b dark:border-gray-700 cursor-pointer transition-colors 
+                                    <div>
+                                        <div
+                                            key={lesson.id}
+                                            onClick={() => setActiveLesson(lesson)}
+                                            className={`flex items-start gap-3 p-4 text-sm border-b dark:border-gray-700 cursor-pointer transition-colors 
                                             ${isActive ? 'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-l-blue-600' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50 border-l-4 border-l-transparent'}`}
-                                    >
-                                        <div className="flex-1">
-                                            <p className={`font-medium ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'}`}>
-                                                {index + 1}. {lesson.title}
-                                            </p>
-                                            <div className="flex items-center gap-2 mt-1 text-xs text-gray-400 dark:text-gray-500">
-                                                {lesson.video_url ? <Play size={12} /> : <FileText size={12} />}
-                                                <span>{lesson.video_url ? "Video" : "Reading"}</span>
+                                        >
+                                            <div className="flex-1">
+                                                <p className={`font-medium ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'}`}>
+                                                    {index + 1}. {lesson.title}
+                                                </p>
+                                                <div className="flex items-center gap-2 mt-1 text-xs text-gray-400 dark:text-gray-500">
+                                                    {lesson.video_url ? <Play size={12} /> : <FileText size={12} />}
+                                                    <span>{lesson.video_url ? "Video" : "Reading"}</span>
+                                                </div>
                                             </div>
                                         </div>
+
                                     </div>
                                 );
                             })}
                         </div>
                     </div>
                 </aside>
+
             </div>
         </div>
     );

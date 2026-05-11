@@ -1,6 +1,6 @@
 from rest_framework import viewsets, status,permissions
-from .models import Course, Lesson, Category,LessonProgress
-from .serializers import CourseSerializer, LessonSerializer, CategorySerializer,LessonProgressSerializer
+from .models import Course, Lesson, Category,LessonProgress,AIConversation
+from .serializers import CourseSerializer, LessonSerializer, CategorySerializer,LessonProgressSerializer,AIConversationSerializer
 from accounts.permissions import IsAdminOrInstructor
 from rest_framework_tracking.mixins import LoggingMixin
 from rest_framework.decorators import action
@@ -266,3 +266,15 @@ class LessonVideoStreamView(APIView):
         except Exception as e:
             print(f"Streaming Error: {e}")
             return HttpResponse("Internal Server Error while streaming.", status=500)
+        
+class AIConversationViewSet(viewsets.ModelViewSet):
+    serializer_class = AIConversationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        # Allow users to see only their own history
+        return AIConversation.objects.filter(student=self.request.user)
+
+    def perform_create(self, serializer):
+        # Student is automatically the logged-in user
+        serializer.save(student=self.request.user)

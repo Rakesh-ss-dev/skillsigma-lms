@@ -1,7 +1,8 @@
 from django.db import models, transaction
 from django.conf import settings
 from django.utils import timezone
-from .tasks import convert_lesson_to_pdf 
+from celery import chain
+from .tasks import convert_lesson_to_pdf,process_lesson_ai_summary
 
 class Category(models.Model):
     name = models.CharField(max_length=255)
@@ -18,7 +19,14 @@ class Course(models.Model):
     is_paid = models.BooleanField(default=False)
     price = models.DecimalField(max_digits=8, decimal_places=2, default=0.00)
     created_at = models.DateTimeField(auto_now_add=True)
-
+    tenant = models.ForeignKey(
+        'tenants.Tenant', 
+        on_delete=models.CASCADE, 
+        null=True, 
+        blank=True
+    )
+    is_global = models.BooleanField(default=False)
+    ai_course_summary = models.TextField(blank=True)
     def __str__(self):
         return self.title
 
@@ -94,7 +102,10 @@ class Lesson(models.Model):
         super().save(*args, **kwargs)
 
         if self.content_file and is_new_file and self.processing_status == 'processing':
-            transaction.on_commit(lambda: convert_lesson_to_pdf.delay(self.id))
+            transaction.on_commit(lambda: chain(
+                convert_lesson_to_pdf.s(self.id),
+                process_lesson_ai_summary.s(self.id)
+            ).apply_async())
                 
 class LessonProgress(models.Model):
     student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="lesson_progress")
@@ -122,3 +133,22 @@ class LessonProgress(models.Model):
 
     def __str__(self):
         return f"{self.student.username} - {self.lesson.title}"
+    
+class AIConversation(models.Model):
+    student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="ai_sessions")
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name="ai_sessions")
+    
+    # Store the full chat history as a JSON list
+    # Format: [{"role": "user", "content": "..."}, {"role": "model", "content": "..."}]
+    transcript = models.JSONField(default=list)
+    
+    # AI-generated summary of the student's performance
+    summary = models.TextField(blank=True, null=True)
+    
+    # Link to the lesson progress to mark it as completed automatically
+    progress = models.OneToOneField(LessonProgress, on_delete=models.CASCADE, null=True, blank=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"AI Session: {self.student.username} - {self.lesson.title}"

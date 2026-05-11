@@ -1,7 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from accounts.views import UserViewSet, StudentGroupViewSet,InstructorViewSet,AdminViewSet
-from courses.views import CourseViewSet, LessonViewSet,CategoryViewSet,LessonProgressViewSet,LessonVideoStreamView
+from courses.views import CourseViewSet, LessonViewSet,CategoryViewSet,LessonProgressViewSet,LessonVideoStreamView,AIConversationViewSet
 from enrollments.views import EnrollmentViewSet, GroupEnrollmentViewSet
 from quizzes.views import QuizViewSet, QuestionViewSet, OptionViewSet, SubmissionViewSet
 from certificates.views import CertificateViewSet
@@ -20,6 +20,8 @@ router.register(r'admin',AdminViewSet,basename="admin")
 # Courses
 router.register(r'categories',CategoryViewSet)
 router.register(r'courses', CourseViewSet)
+router.register(r'lessons',LessonViewSet)
+router.register(r'ai-conversations', AIConversationViewSet, basename='ai-conversation')
 
 courses_router = routers.NestedDefaultRouter(router, r'courses', lookup='course')
 courses_router.register(r'lessons', LessonViewSet, basename='course-lessons')

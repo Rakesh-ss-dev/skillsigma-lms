@@ -1,5 +1,6 @@
 from rest_framework import viewsets, generics, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_tracking.mixins import LoggingMixin
@@ -54,7 +55,19 @@ class UserViewSet(LoggingMixin, viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
-
+    
+    @action(detail=False, methods=['get'])
+    def me(self, request):
+        user = request.user
+        return Response({
+            "username": user.username,
+            "role": user.role,
+            "tenant_details": {
+                "name": user.tenant.name if user.tenant else "Global",
+                "slug": user.tenant.slug if user.tenant else "global",
+                "ai_persona_prompt": user.tenant.ai_persona_prompt if user.tenant else "You are a tutor."
+            }
+        })
 
 class InstructorViewSet(LoggingMixin, viewsets.ModelViewSet):
     queryset = User.objects.filter(role="instructor")

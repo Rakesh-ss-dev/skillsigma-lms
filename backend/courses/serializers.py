@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Course, Lesson, Category,LessonProgress
+from .models import Course, Lesson, Category,LessonProgress,AIConversation
 from accounts.models import User
 from quizzes.models import Quiz,Submission
 from enrollments.models import Enrollment
@@ -164,4 +164,21 @@ class LessonProgressSerializer(serializers.ModelSerializer):
             defaults={'is_completed': validated_data.get('is_completed',True)}
         )
         return progress
-    
+
+# In your lessons/serializers.py
+class AIConversationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AIConversation
+        fields = ['id', 'lesson', 'transcript', 'summary', 'created_at']
+        read_only_fields = ['id', 'created_at']
+
+    def create(self, validated_data):
+        # Grab the user directly from the JWT context
+        user = self.context['request'].user
+        
+        # Create a standalone record
+        return AIConversation.objects.create(
+            student=user,
+            **validated_data
+        )
+        

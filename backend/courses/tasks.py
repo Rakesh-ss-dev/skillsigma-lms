@@ -6,7 +6,7 @@ import shutil
 
 from celery import shared_task
 from django.core.files.base import ContentFile
-
+from google import genai
 from utils.drive_service import upload_video_private
 
 @shared_task(bind=True, autoretry_for=(Exception,), retry_backoff=30, retry_kwargs={"max_retries": 3})
@@ -107,7 +107,30 @@ def convert_lesson_to_pdf(self, lesson_id):
         if os.path.exists(temp_output_dir):
             shutil.rmtree(temp_output_dir)
 
-# tasks.py
+@shared_task
+def process_lesson_ai_summary(lesson_id):
+    from .models import Lesson # Avoid circular import
+    
+    lesson = Lesson.objects.get(id=lesson_id)
+    pdf_path = lesson.pdf_file.path
+    
+    # 1. Initialize Gemini
+    client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+    lesson = Lesson.objects.get(id=lesson_id)
+    # 2. Upload PDF to Gemini (or extract text manually)
+    # For simplicity, we'll extract text or send the file directly
+    with open(pdf_path, 'rb') as doc:
+        response = client.models.generate_content(
+            model="gemini-1.5-flash",
+            contents=[
+                "Summarize this lesson content in 5 key bullet points for a student knowledge base.",
+                doc
+            ]
+        )
+    
+    # 3. Save the summary back to the Lesson model
+    lesson.ai_summary = response.text
+    lesson.save()
 
 
 @shared_task

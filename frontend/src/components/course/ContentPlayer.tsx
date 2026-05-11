@@ -3,6 +3,7 @@ import { Play, FileText } from 'lucide-react'; // Ensure you have lucide-react i
 import { ContentItem } from '../util/types';
 import PDFViewer from '../common/PDFViewer';
 import VideoPlayer from '../common/VideoPlayer';
+import AITutor from '../../AI_tutor/AITutor';
 
 interface ContentPlayerProps {
     lesson: ContentItem;
@@ -11,7 +12,6 @@ interface ContentPlayerProps {
 
 export const ContentPlayer: React.FC<ContentPlayerProps> = ({ lesson, onComplete }) => {
     const apiUrl = import.meta.env.VITE_API_URL;
-
     // 1. Determine availability
     const hasVideo = !!lesson.video_url;
     const hasPdf = !!lesson.pdf_version;
@@ -116,7 +116,9 @@ export const ContentPlayer: React.FC<ContentPlayerProps> = ({ lesson, onComplete
                         dangerouslySetInnerHTML={{ __html: lesson.content || "<p>No additional text content.</p>" }}
                     />
                 </div>
+                <AITutor lessonId={lesson.id} authToken={localStorage.getItem('access')} />
             </div>
+
         </div>
     );
 };

@@ -1,11 +1,11 @@
 from django.contrib import admin
-from .models import Course,Lesson,Category ,LessonProgress
+from .models import Course,Lesson,Category ,LessonProgress,AIConversation
 from accounts.models import User
 # Register your models here.
 admin.site.register(Lesson)
 admin.site.register(Category)
 admin.site.register(LessonProgress)
-
+admin.site.register(AIConversation)
 @admin.register(Course)
 class CourseAdmin(admin.ModelAdmin):
     list_display = ("title", "created_at")

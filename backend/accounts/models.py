@@ -8,7 +8,13 @@ class User(AbstractUser):
         ('instructor', 'Instructor'),
         ('student', 'Student'),
     )
-
+    tenant = models.ForeignKey(
+        'tenants.Tenant', 
+        on_delete=models.CASCADE, 
+        related_name="users",
+        null=True,
+        blank=True
+    )
     role = models.CharField(
         max_length=20,
         choices=ROLES,
@@ -33,6 +39,7 @@ class User(AbstractUser):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True)
+    
     
 class StudentGroup(models.Model):
     name = models.CharField(max_length=255)

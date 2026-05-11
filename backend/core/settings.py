@@ -48,7 +48,8 @@ INSTALLED_APPS = [
     "courses",
     "enrollments",
     "quizzes",
-    "drf_api_logger"
+    "drf_api_logger",
+    "tenants"
 ]
 
 
