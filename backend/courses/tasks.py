@@ -108,15 +108,15 @@ def convert_lesson_to_pdf(self, lesson_id):
             shutil.rmtree(temp_output_dir)
 
 @shared_task
-def process_lesson_ai_summary(lesson_id):
+def process_lesson_ai_summary(previous_result, lesson_id):
     from .models import Lesson # Avoid circular import
-    
+    print(previous_result)
     lesson = Lesson.objects.get(id=lesson_id)
     pdf_path = lesson.pdf_file.path
     
     # 1. Initialize Gemini
     client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
-    lesson = Lesson.objects.get(id=lesson_id)
+    
     # 2. Upload PDF to Gemini (or extract text manually)
     # For simplicity, we'll extract text or send the file directly
     with open(pdf_path, 'rb') as doc:
@@ -143,30 +143,29 @@ def upload_lesson_video_to_drive(lesson_id):
         if not lesson.video_file_temp or not os.path.exists(lesson.video_file_temp.path):
             return "No file to upload"
 
-        # 1. Update status to Processing
+        # Update status to Processing
         lesson.video_status = 'processing'
         lesson.save(update_fields=['video_status'])
 
         print(f"Uploading video for Lesson {lesson_id}...")
 
-        # 2. Prepare the Path
+        # Prepare the Path
         # It is safer to pass the absolute path string to the uploader
         file_path = lesson.video_file_temp.path
         
-        # 3. Upload to Drive (Private)
-        # returns the ID string (e.g., '1a2B3c...')
+        #Upload to Drive (Private)
         file_id = upload_video_private(file_path)
 
-        # 4. Construct a valid URL for the Database
+        # Construct a valid URL for the Database
         # We store the full URL to satisfy Django's URLField validation,
         # but our views will extract the ID from it later.
         drive_fake_url = f"https://drive.google.com/file/d/{file_id}/preview"
 
-        # 5. Update Lesson
+        # Update Lesson
         lesson.video_url = drive_fake_url
         lesson.video_status = 'completed'
         
-        # 6. Cleanup (Delete the temp file from disk and DB field)
+        # Cleanup (Delete the temp file from disk and DB field)
         # storage.delete() handles the file on disk
         lesson.video_file_temp.storage.delete(lesson.video_file_temp.name)
         lesson.video_file_temp = None 
