@@ -137,7 +137,7 @@ class LessonProgress(models.Model):
 class AIConversation(models.Model):
     student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="ai_sessions")
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name="ai_sessions")
-    
+    session_id = models.CharField(max_length=255, unique=True, null=True, blank=True)
     # Store the full chat history as a JSON list
     # Format: [{"role": "user", "content": "..."}, {"role": "model", "content": "..."}]
     transcript = models.JSONField(default=list)
@@ -147,7 +147,7 @@ class AIConversation(models.Model):
     
     # Link to the lesson progress to mark it as completed automatically
     progress = models.OneToOneField(LessonProgress, on_delete=models.CASCADE, null=True, blank=True)
-    
+    tenant = models.ForeignKey('tenants.Tenant', on_delete=models.CASCADE, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

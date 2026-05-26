@@ -1,3 +1,5 @@
+import json
+
 from rest_framework import serializers
 from .models import Course, Lesson, Category,LessonProgress,AIConversation
 from accounts.models import User
@@ -169,16 +171,23 @@ class LessonProgressSerializer(serializers.ModelSerializer):
 class AIConversationSerializer(serializers.ModelSerializer):
     class Meta:
         model = AIConversation
-        fields = ['id', 'lesson', 'transcript', 'summary', 'created_at']
-        read_only_fields = ['id', 'created_at']
+        fields = ['id', 'session_id', 'lesson', 'transcript', 'summary', 'created_at', 'tenant']
+        read_only_fields = ['id', 'tenant']
+
+    def validate_transcript(self, value):
+        """
+        DRF Field Hook: Runs instantly prior to both create and update validation checks.
+        Ensures string block arrays are converted completely back to standard Python lists
+        before any database driver interaction happens.
+        """
+        if isinstance(value, str):
+            try:
+                return json.loads(value)
+            except json.JSONDecodeError:
+                raise serializers.ValidationError("Invalid JSON text format string passed to transcript field.")
+        return value
 
     def create(self, validated_data):
-        # Grab the user directly from the JWT context
-        user = self.context['request'].user
-        
-        # Create a standalone record
-        return AIConversation.objects.create(
-            student=user,
-            **validated_data
-        )
-        
+        # Prevent keyword arg duplication issues safely
+        student = validated_data.pop('student', None)
+        return AIConversation.objects.create(student=student, **validated_data)

@@ -1,3 +1,5 @@
+import json
+
 from rest_framework import viewsets, status,permissions
 from .models import Course, Lesson, Category,LessonProgress,AIConversation
 from .serializers import CourseSerializer, LessonSerializer, CategorySerializer,LessonProgressSerializer,AIConversationSerializer
@@ -272,9 +274,41 @@ class AIConversationViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        # Allow users to see only their own history
-        return AIConversation.objects.filter(student=self.request.user)
+        queryset = AIConversation.objects.filter(student=self.request.user)
+        lesson_id = self.request.query_params.get('lesson') 
+        if lesson_id:
+            queryset = queryset.filter(lesson_id=lesson_id)
+        return queryset.order_by('-created_at')
 
-    def perform_create(self, serializer):
-        # Student is automatically the logged-in user
-        serializer.save(student=self.request.user)
+    def create(self, request, *args, **kwargs):
+        session_id = request.data.get("session_id")
+        
+        if session_id:
+            # Target an existing session record row anchor or compile a new one
+            instance = AIConversation.objects.filter(session_id=session_id).first()
+            tenant_obj = request.user.tenant if hasattr(request.user, 'tenant') else None
+            
+            if instance:
+                # Update loop
+                serializer = self.get_serializer(instance, data=request.data, partial=True)
+                status_code = status.HTTP_200_OK
+            else:
+                # Creation loop
+                serializer = self.get_serializer(data=request.data)
+                status_code = status.HTTP_201_CREATED
+
+            # DRF interceptor kicks in here, safely converting transcript strings to clean lists
+            serializer.is_valid(raise_exception=True)
+            
+            if instance:
+                serializer.save()
+            else:
+                serializer.save(
+                    student=request.user, 
+                    tenant=tenant_obj,
+                    session_id=session_id
+                )
+
+            return Response(serializer.data, status=status_code)
+
+        return super().create(request, *args, **kwargs)

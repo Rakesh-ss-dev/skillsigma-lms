@@ -8,6 +8,8 @@ from celery import shared_task
 from django.core.files.base import ContentFile
 from google import genai
 from utils.drive_service import upload_video_private
+from django.apps import apps
+import time
 
 @shared_task(bind=True, autoretry_for=(Exception,), retry_backoff=30, retry_kwargs={"max_retries": 3})
 def convert_lesson_to_pdf(self, lesson_id):
@@ -135,7 +137,7 @@ def process_lesson_ai_summary(previous_result, lesson_id):
 
 @shared_task
 def upload_lesson_video_to_drive(lesson_id):
-    from .models import Lesson
+    Lesson = apps.get_model('courses', 'Lesson')
     try:
         lesson = Lesson.objects.get(id=lesson_id)
         
@@ -147,37 +149,74 @@ def upload_lesson_video_to_drive(lesson_id):
         lesson.video_status = 'processing'
         lesson.save(update_fields=['video_status'])
 
-        print(f"Uploading video for Lesson {lesson_id}...")
-
-        # Prepare the Path
-        # It is safer to pass the absolute path string to the uploader
         file_path = lesson.video_file_temp.path
+
+        # -------------------------------------------------------------
+        # STEP 1: AI Video Analysis (Must happen while local file exists)
+        # -------------------------------------------------------------
+        print(f"Starting Gemini AI Video Analysis for Lesson {lesson_id}...")
+        try:
+            client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+            
+            # Upload to Gemini File API
+            gemini_file = client.files.upload(file=file_path)
+            
+            # Wait for Gemini processing (videos take time to parse frames)
+            while gemini_file.state.name == "PROCESSING":
+                print("Waiting for Gemini to process video frames...")
+                time.sleep(10)
+                gemini_file = client.files.get(name=gemini_file.name)
+                
+            if gemini_file.state.name == "FAILED":
+                print("Gemini video processing failed, skipping AI summary.")
+                lesson.ai_summary = "AI processing failed for this video."
+            else:
+                # Ask Gemini to watch the video and write the summary
+                response = client.models.generate_content(
+                    model="gemini-2.0-flash",
+                    contents=[
+                        gemini_file,
+                        "Analyze this educational video. Provide a detailed summary, "
+                        "extract key conceptual definitions, list code implementations or diagrams shown, "
+                        "and provide helpful student study notes."
+                    ]
+                )
+                lesson.ai_summary = response.text
+                
+                # Cleanup from Gemini Cloud storage
+                client.files.delete(name=gemini_file.name)
+                print("✅ AI Analysis complete and saved to lesson.")
+                
+        except Exception as ai_err:
+            print(f"⚠️ AI Processing error (Skipping but continuing upload): {ai_err}")
+            lesson.ai_summary = f"AI Analysis failed: {ai_err}"
+
+        # -------------------------------------------------------------
+        # STEP 2: Your Original Google Drive Upload Logic
+        # -------------------------------------------------------------
+        print(f"Uploading video to Google Drive for Lesson {lesson_id}...")
         
-        #Upload to Drive (Private)
+        # Call your existing custom uploader function
         file_id = upload_video_private(file_path)
 
-        # Construct a valid URL for the Database
-        # We store the full URL to satisfy Django's URLField validation,
-        # but our views will extract the ID from it later.
         drive_fake_url = f"https://drive.google.com/file/d/{file_id}/preview"
 
-        # Update Lesson
+        # Update Lesson with both Drive URL and AI Data
         lesson.video_url = drive_fake_url
         lesson.video_status = 'completed'
         
         # Cleanup (Delete the temp file from disk and DB field)
-        # storage.delete() handles the file on disk
         lesson.video_file_temp.storage.delete(lesson.video_file_temp.name)
         lesson.video_file_temp = None 
         
-        lesson.save(update_fields=['video_url', 'video_status', 'video_file_temp'])
+        # Save all updated metrics safely
+        lesson.save(update_fields=['video_url', 'video_status', 'video_file_temp', 'ai_summary'])
         
-        return f"Upload Successful. Drive ID: {file_id}"
+        return f"Upload & AI Analysis Successful. Drive ID: {file_id}"
 
     except Exception as e:
-        print(f"Video Upload Failed: {e}")
+        print(f"Video Task Failed: {e}")
         try:
-            # Re-fetch in case connection was lost
             lesson = Lesson.objects.get(id=lesson_id)
             lesson.video_status = 'failed'
             lesson.save(update_fields=['video_status'])
